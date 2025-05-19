@@ -1,0 +1,151 @@
+import random
+from enum import Enum
+from typing import List, Tuple
+
+# Enums for Gripper Types and Object Types
+class GripperType(Enum):
+    SUCTION = "Suction"
+    PARALLEL = "Parallel"
+    MAGNETIC = "Magnetic"
+    SOFT = "Soft"
+
+class ObjectType(Enum):
+    BOX = "Box"
+    CYLINDER = "Cylinder"
+    SHEET = "Sheet"
+    METAL_PART = "MetalPart"
+    FRAGILE = "Fragile"
+
+# Motor and Drive classes
+class Motor:
+    def __init__(self, axis: str, max_speed: float, max_torque: float):
+        self.axis = axis
+        self.max_speed = max_speed
+        self.max_torque = max_torque
+        self.position = 0.0
+
+    def move_to(self, position: float, speed: float):
+        if speed > self.max_speed:
+            speed = self.max_speed
+        print(f"[Motor-{self.axis}] Moving to {position} at {speed} mm/s")
+        self.position = position
+
+class Drive:
+    def __init__(self, motor: Motor):
+        self.motor = motor
+
+    def command_move(self, position: float, speed: float):
+        self.motor.move_to(position, speed)
+
+# Sensors
+class Sensor:
+    def __init__(self, name: str):
+        self.name = name
+
+    def read(self):
+        return random.choice([True, False])
+
+class PositionSensor(Sensor):
+    def __init__(self, axis: str):
+        super().__init__(f"PositionSensor-{axis}")
+
+    def get_position(self, motor: Motor):
+        return motor.position
+
+class ForceSensor(Sensor):
+    def __init__(self):
+        super().__init__("ForceSensor")
+
+    def get_force(self):
+        return random.uniform(0, 100)  # Newtons
+
+# Gripper classes
+class Gripper:
+    def __init__(self, gripper_type: GripperType):
+        self.gripper_type = gripper_type
+
+    def pick(self, obj_type: ObjectType):
+        print(f"[Gripper-{self.gripper_type.value}] Picking {obj_type.value}")
+
+    def place(self, location: Tuple[float, float, float]):
+        print(f"[Gripper-{self.gripper_type.value}] Placing at {location}")
+
+# Gantry Robot System
+class GantryRobot:
+    def __init__(self):
+        # 8 DOF: X, Y, Z, Extend, Retract, Rotate, Tilt, Gripper Open/Close
+        self.motors = [
+            Motor("X", 2000, 10),
+            Motor("Y", 2000, 10),
+            Motor("Z", 1500, 8),
+            Motor("Extend", 2500, 5),
+            Motor("Retract", 2500, 5),
+            Motor("Rotate", 360, 2),
+            Motor("Tilt", 180, 2),
+            Motor("Gripper", 100, 1)
+        ]
+        self.drives = [Drive(motor) for motor in self.motors]
+        self.position_sensors = [PositionSensor(motor.axis) for motor in self.motors]
+        self.force_sensor = ForceSensor()
+        self.grippers = [
+            Gripper(GripperType.SUCTION),
+            Gripper(GripperType.PARALLEL),
+            Gripper(GripperType.MAGNETIC),
+            Gripper(GripperType.SOFT)
+        ]
+        self.current_gripper = self.grippers[0]
+
+    def select_gripper(self, obj_type: ObjectType):
+        if obj_type == ObjectType.BOX or obj_type == ObjectType.SHEET:
+            self.current_gripper = self.grippers[0]  # Suction
+        elif obj_type == ObjectType.CYLINDER:
+            self.current_gripper = self.grippers[1]  # Parallel
+        elif obj_type == ObjectType.METAL_PART:
+            self.current_gripper = self.grippers[2]  # Magnetic
+        elif obj_type == ObjectType.FRAGILE:
+            self.current_gripper = self.grippers[3]  # Soft
+        print(f"Selected gripper: {self.current_gripper.gripper_type.value}")
+
+    def move_to(self, position: Tuple[float, float, float], orientation: Tuple[float, float]):
+        # position: (x, y, z), orientation: (rotate, tilt)
+        axes = ["X", "Y", "Z", "Rotate", "Tilt"]
+        values = list(position) + list(orientation)
+        for i, axis in enumerate(axes):
+            self.drives[i].command_move(values[i], speed=1000)
+            print(f"Sensor-{axis}: {self.position_sensors[i].get_position(self.motors[i])}")
+
+    def extend_retract(self, extend: bool):
+        idx = 3 if extend else 4
+        action = "Extending" if extend else "Retracting"
+        self.drives[idx].command_move(100 if extend else 0, speed=2000)
+        print(f"{action} axis to position {self.motors[idx].position}")
+
+    def operate_gripper(self, open: bool):
+        idx = 7
+        action = "Opening" if open else "Closing"
+        self.drives[idx].command_move(1 if open else 0, speed=100)
+        print(f"{action} gripper")
+
+    def pick_and_place(self, obj_type: ObjectType, pick_pos: Tuple[float, float, float], place_pos: Tuple[float, float, float]):
+        self.select_gripper(obj_type)
+        self.move_to(pick_pos, (0, 0))
+        self.extend_retract(True)
+        self.operate_gripper(False)
+        self.current_gripper.pick(obj_type)
+        print(f"Force detected: {self.force_sensor.get_force():.2f}N")
+        self.extend_retract(False)
+        self.move_to(place_pos, (0, 0))
+        self.extend_retract(True)
+        self.operate_gripper(True)
+        self.current_gripper.place(place_pos)
+        self.extend_retract(False)
+
+# Example usage
+if __name__ == "__main__":
+    gantry = GantryRobot()
+    # Simulate picking a metal part and placing it elsewhere
+    gantry.pick_and_place(
+        ObjectType.METAL_PART,
+        pick_pos=(100, 200, 50),
+        place_pos=(400, 100, 50)
+    )
