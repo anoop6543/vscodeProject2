@@ -4,5 +4,41 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.pythonPath": "python",
+		"python.formatting.provider": "black",
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": true,
+		"python.linting.flake8Enabled": false,
+		"python.linting.mypyEnabled": false,
+		"python.testing.unittestEnabled": true,
+		"python.testing.pytestEnabled": false,
+		"python.testing.nosetestsEnabled": false
+	},
+	"launch": {
+		"configurations": [
+			{
+				"name": "Python: SimpleGantrySimulation",
+				"type": "python",
+				"request": "launch",
+				"program": "${workspaceFolder}/SimpleGantrySimulation",
+				"console": "integratedTerminal"
+			}
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Run SimpleGantrySimulation",
+				"type": "shell",
+				"command": "python",
+				"args": [
+					"SimpleGantrySimulation"
+				],
+				"group": "build",
+				"problemMatcher": []
+			}
+		]
+	}
 }
