@@ -1,6 +1,7 @@
 import random
 from enum import Enum
 from typing import List, Tuple
+import math
 
 # Enums for Gripper Types and Object Types
 class GripperType(Enum):
@@ -95,6 +96,106 @@ class GantryRobot:
         ]
         self.current_gripper = self.grippers[0]
 
+    def arc_move(self, start_point: Tuple[float, float, float], 
+                 end_point: Tuple[float, float, float], 
+                 center_point: Tuple[float, float], 
+                 speed: float):
+        """
+        Move in an arc from start_point to end_point around center_point in the XY plane.
+        Z coordinate is kept constant from start_point.
+        Orientation (rotate, tilt) is kept constant at current motor positions.
+        """
+        print("\nStarting arc movement...")
+        
+        x1, y1, z1 = start_point
+        x2, y2, _ = end_point  # z2 from end_point is not used for path, Z is constant from z1
+        xc, yc = center_point
+
+        # Calculate radii from center to start and end points
+        r1 = math.sqrt((x1 - xc)**2 + (y1 - yc)**2)
+        r2 = math.sqrt((x2 - xc)**2 + (y2 - yc)**2)
+
+        if not math.isclose(r1, r2, rel_tol=1e-5):
+            print(f"Warning: Start and end points are not equidistant from the center. r1={r1:.2f}, r2={r2:.2f}")
+            # Using start_point's radius for the arc
+        
+        radius = r1
+
+        if radius == 0:
+            print("Error: Radius is zero. Cannot form an arc. Moving directly to end_point.")
+            # Fallback: move directly to the end_point's X, Y, maintaining start_point's Z
+            current_orientation = (self.motors[5].position, self.motors[6].position)
+            self.move_to((x2, y2, z1), current_orientation)
+            print("Arc movement finished (direct move due to zero radius).")
+            return
+
+        # Calculate start and end angles
+        start_angle = math.atan2(y1 - yc, x1 - xc)
+        end_angle = math.atan2(y2 - yc, x2 - xc)
+
+        # Determine the direction of the arc (shortest path)
+        angle_diff = end_angle - start_angle
+        # Normalize angle_diff to be between -pi and pi for shortest path
+        if angle_diff > math.pi:
+            angle_diff -= 2 * math.pi
+        elif angle_diff < -math.pi:
+            angle_diff += 2 * math.pi
+        
+        # Number of steps
+        # Based on fixed angular increment for simplicity, similar to compound_movements.py
+        if math.isclose(angle_diff, 0, abs_tol=1e-6) : # Start and end angles are effectively the same
+            if math.isclose(x1,x2) and math.isclose(y1,y2): # if points are also same
+                num_steps = 0 # No movement needed if start and end are the same point
+                print("Start and end points for arc are effectively the same. No arc movement executed.")
+            else: # if angles are same but points are different (e.g. center is on the line connecting them)
+                  # This case should ideally be handled by radius check or better geometry logic
+                  # For now, treat as a straight line if angles are same but points differ.
+                print("Warning: Arc start and end angles are the same but points differ. Moving in straight line to target XY.")
+                num_steps = 1 # Move directly to end point's XY
+        else:
+            angle_increment_fixed = 0.05 # radians, about 3 degrees
+            num_steps = max(2, int(abs(angle_diff) / angle_increment_fixed))
+
+        print(f"Arc Details: Radius: {radius:.2f}, Start Angle: {math.degrees(start_angle):.2f} deg, End Angle: {math.degrees(end_angle):.2f} deg")
+        print(f"Angle Difference: {math.degrees(angle_diff):.2f} deg, Number of Steps: {num_steps}")
+
+        if num_steps == 0: # Handles the case where start and end points are identical
+             # Current orientation
+            current_orientation = (self.motors[5].position, self.motors[6].position)
+            # Ensure robot is at start_point (or end_point, since they are same)
+            self.move_to((x1,y1,z1), current_orientation)
+            print("Arc movement finished (start and end are the same).")
+            return
+        
+        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        # These will be kept constant throughout the arc move.
+        current_rotate_pos = self.motors[5].position
+        current_tilt_pos = self.motors[6].position
+        current_orientation = (current_rotate_pos, current_tilt_pos)
+
+        # Initial move to the start_point of the arc to ensure correct Z and orientation
+        # print(f"Moving to arc start point: ({x1:.2f}, {y1:.2f}, {z1:.2f}) with orientation {current_orientation}")
+        # self.move_to((x1, y1, z1), current_orientation)
+
+        for i in range(num_steps + 1):
+            # Interpolate angle
+            current_angle = start_angle + (angle_diff / num_steps) * i
+            
+            # Calculate intermediate point coordinates
+            x = xc + radius * math.cos(current_angle)
+            y = yc + radius * math.sin(current_angle)
+            # Z is kept constant from start_point.z1
+            
+            # print(f"Arc Step {i}: Target ({x:.2f}, {y:.2f}, {z1:.2f}), Angle: {math.degrees(current_angle):.2f} deg")
+            self.move_to((x, y, z1), current_orientation) # speed is handled by move_to's default or could be passed
+
+        # Ensure the robot is precisely at the intended end_point (x2,y2,z1)
+        # This corrects any potential floating point errors from interpolation.
+        print(f"Ensuring robot reaches final arc point: ({x2:.2f}, {y2:.2f}, {z1:.2f})")
+        self.move_to((x2, y2, z1), current_orientation)
+        
+        print("Arc movement finished.")
+
     def select_gripper(self, obj_type: ObjectType):
         if obj_type == ObjectType.BOX or obj_type == ObjectType.SHEET:
             self.current_gripper = self.grippers[0]  # Suction
@@ -148,4 +249,204 @@ if __name__ == "__main__":
         ObjectType.METAL_PART,
         pick_pos=(100, 200, 50),
         place_pos=(400, 100, 50)
+    )
+
+    def spiral_move(self, center_xy: Tuple[float, float], 
+                    start_radius: float, end_radius: float, 
+                    total_angle_rad: float, 
+                    z_start: float, z_increment_per_rad: float, 
+                    speed: float): # speed is not directly used in step calculation, but good to have for move_to
+        """
+        Move in a spiral pattern.
+        center_xy: (xc, yc) for the spiral center.
+        start_radius: initial distance from center.
+        end_radius: final distance from center.
+        total_angle_rad: total angle of rotation for the spiral. Positive for CCW, negative for CW.
+        z_start: initial Z coordinate.
+        z_increment_per_rad: Z change per radian of rotation.
+        speed: movement speed for individual segments.
+        """
+        print("\nStarting spiral movement...")
+        xc, yc = center_xy
+
+        # Determine current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        current_orientation = (self.motors[5].position, self.motors[6].position)
+
+        # Handle zero total angle - move to start point configuration if different from current
+        if math.isclose(total_angle_rad, 0):
+            print("Total angle is zero. Moving to start_radius at initial angle (0) and z_start.")
+            x = xc + start_radius * math.cos(0)
+            y = yc + start_radius * math.sin(0)
+            self.move_to((x, y, z_start), current_orientation)
+            print("Spiral movement finished (total angle was zero).")
+            return
+
+        angular_step_magnitude = math.radians(10) # Fixed angular step for simplicity (e.g., 10 degrees)
+        direction = 1 if total_angle_rad > 0 else -1
+        
+        num_steps = int(abs(total_angle_rad) / angular_step_magnitude)
+        
+        if num_steps == 0: # If total_angle_rad is very small, ensure at least one step to the final point
+            print("Total angle is small, resulting in zero steps. Moving directly to the final spiral point.")
+            # Calculate final point directly
+            final_x = xc + end_radius * math.cos(total_angle_rad)
+            final_y = yc + end_radius * math.sin(total_angle_rad)
+            final_z = z_start + total_angle_rad * z_increment_per_rad
+            self.move_to((final_x, final_y, final_z), current_orientation)
+            print("Spiral movement finished.")
+            return
+
+        print(f"Spiral Details: Center: {center_xy}, StartR: {start_radius}, EndR: {end_radius}")
+        print(f"Total Angle: {math.degrees(total_angle_rad):.2f} deg, Z Start: {z_start}, Z Incr/Rad: {z_increment_per_rad}")
+        print(f"Num steps: {num_steps}, Angular Step: {math.degrees(angular_step_magnitude * direction):.2f} deg")
+
+        current_angle = 0.0
+        
+        # Radius change per absolute radian, to handle total_angle_rad being negative
+        # This ensures radius always interpolates from start_radius to end_radius over |total_angle_rad|
+        radius_increment_per_abs_rad = (end_radius - start_radius) / abs(total_angle_rad)
+
+        for i in range(num_steps + 1): # num_steps + 1 to include the end point of this step-wise calculation
+            # Interpolate radius based on the absolute progress through the total angle
+            # current_angle_abs_progress = abs(current_angle) # current_angle already reflects the signed progression
+            
+            # Radius should interpolate based on how much of the *absolute* total angle has been covered
+            # If current_angle is used directly, and it's negative, radius calculation might be inverted.
+            # So, use current_angle for position, but its magnitude relative to total_angle_rad for interpolation.
+            
+            # Simpler: interpolate based on step `i` vs `num_steps`
+            # This avoids issues with current_angle starting at 0 then becoming angular_step for the first point.
+            progress_fraction = i / num_steps if num_steps > 0 else 0
+            
+            # current_radius for this step:
+            # current_radius = start_radius + progress_fraction * (end_radius - start_radius)
+            # current_z for this step:
+            # actual_current_angle_for_step = progress_fraction * total_angle_rad
+            # current_z_val = z_start + actual_current_angle_for_step * z_increment_per_rad
+            
+            # Let's use the definition from the plan:
+            # current_radius = start_radius + abs(current_angle) * radius_increment_per_abs_rad
+            # This is more accurate if angular_step doesn't perfectly divide total_angle_rad
+
+            # For step i, the angle is i * (angular_step * direction)
+            actual_current_angle = i * (angular_step_magnitude * direction)
+            
+            # Ensure actual_current_angle does not exceed total_angle_rad in magnitude
+            if abs(actual_current_angle) > abs(total_angle_rad):
+                actual_current_angle = total_angle_rad
+
+            current_radius = start_radius + (abs(actual_current_angle) / abs(total_angle_rad)) * (end_radius - start_radius)
+            
+            x = xc + current_radius * math.cos(actual_current_angle)
+            y = yc + current_radius * math.sin(actual_current_angle)
+            z = z_start + actual_current_angle * z_increment_per_rad
+            
+            # print(f"Step {i}: Angle={math.degrees(actual_current_angle):.2f}, Rad={current_radius:.2f}, X={x:.2f}, Y={y:.2f}, Z={z:.2f}")
+            self.move_to((x, y, z), current_orientation)
+            
+            # This loop structure ensures that the final point (i=num_steps) corresponds to total_angle_rad
+
+        # Explicitly move to the final calculated point to ensure precision
+        final_x = xc + end_radius * math.cos(total_angle_rad)
+        final_y = yc + end_radius * math.sin(total_angle_rad)
+        final_z = z_start + total_angle_rad * z_increment_per_rad
+        print(f"Ensuring robot reaches final spiral point: ({final_x:.2f}, {final_y:.2f}, {final_z:.2f})")
+        self.move_to((final_x, final_y, final_z), current_orientation)
+        
+        print("Spiral movement finished.")
+
+
+    # Test arc_move
+    # Scenario 1: 90-degree arc
+    print("\n--- Testing Arc Move: Scenario 1 (90 degrees) ---")
+    gantry.arc_move(
+        start_point=(100, 0, 20),  # Start at (100,0,20)
+        end_point=(0, 100, 20),    # End at (0,100,20)
+        center_point=(0, 0),       # Center at (0,0)
+        speed=500
+    )
+
+    # Test spiral_move
+    print("\n--- Testing Spiral Move: Scenario 1 (Flat Outward Spiral) ---")
+    gantry.spiral_move(
+        center_xy=(0, 0),
+        start_radius=10,
+        end_radius=100,
+        total_angle_rad=math.pi * 4,  # Two full rotations
+        z_start=10,
+        z_increment_per_rad=0,    # Flat spiral
+        speed=500
+    )
+
+    print("\n--- Testing Spiral Move: Scenario 2 (Upward Inward Spiral) ---")
+    gantry.spiral_move(
+        center_xy=(50, 50),
+        start_radius=80,
+        end_radius=20,
+        total_angle_rad=math.pi * 6,  # Three full rotations
+        z_start=0,
+        z_increment_per_rad=5 / math.pi,  # Z increases by 10 over 2pi (one rotation) -> 5/pi per rad
+        speed=500
+    )
+    
+    print("\n--- Testing Spiral Move: Scenario 3 (Downward Outward Spiral, Clockwise) ---")
+    gantry.spiral_move(
+        center_xy=(-50, 0),
+        start_radius=30,
+        end_radius=70,
+        total_angle_rad= -math.pi * 2,  # One full rotation clockwise
+        z_start=50,
+        z_increment_per_rad= -10 / math.pi, # Z decreases by 20 over 2pi (one rotation) -> -10/pi per rad
+        speed=500
+    )
+
+    print("\n--- Testing Spiral Move: Scenario 4 (Zero Angle) ---")
+    gantry.spiral_move(
+        center_xy=(0,0),
+        start_radius=50,
+        end_radius=50, # Does not matter if angle is 0
+        total_angle_rad=0,
+        z_start=10,
+        z_increment_per_rad=1, # Does not matter
+        speed=500
+    )
+
+    print("\n--- Testing Spiral Move: Scenario 5 (Small Angle) ---")
+    gantry.spiral_move(
+        center_xy=(0,0),
+        start_radius=50,
+        end_radius=55, 
+        total_angle_rad=math.radians(15), # Small angle
+        z_start=10,
+        z_increment_per_rad=1,
+        speed=500
+    )
+    # Expected: Robot moves from (100,0,20) to (0,100,20) in an arc around (0,0)
+
+    # Scenario 2: Semi-circle arc
+    print("\n--- Testing Arc Move: Scenario 2 (180 degrees) ---")
+    gantry.arc_move(
+        start_point=(200, 50, 30),   # Start at (200,50,30)
+        end_point=(-200, 50, 30), # End at (-200,50,30)
+        center_point=(0, 50),      # Center at (0,50)
+        speed=500
+    )
+    # Expected: Robot moves from (200,50,30) to (-200,50,30) in a semi-circle around (0,50)
+
+    # Scenario 3: Arc where start and end are the same (should not move much or print a message)
+    print("\n--- Testing Arc Move: Scenario 3 (Start = End) ---")
+    gantry.arc_move(
+        start_point=(50, 50, 10),
+        end_point=(50, 50, 10),
+        center_point=(0,0),
+        speed=500
+    )
+
+    # Scenario 4: Zero radius (center is same as start/end points)
+    print("\n--- Testing Arc Move: Scenario 4 (Zero Radius) ---")
+    gantry.arc_move(
+        start_point=(0,0,10),
+        end_point=(100,0,10), # End point different to see direct move
+        center_point=(0,0),   # Center same as start
+        speed=500
     )

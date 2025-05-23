@@ -45,8 +45,11 @@ To create a comprehensive simulation environment that enables:
 - **Configurable Parameters**: PCB specifications, component libraries, feeder positions are configurable. *(Implemented for PCB assembly)*
 - **VS Code Integration**: Includes launch configurations and tasks for easy execution within Visual Studio Code. *(Implemented)*
 - **Force Sensing Simulation**: Basic simulation of force sensing during pick and place operations. *(Partially implemented for PCB assembly)*
-- **Gripper Selection**: Simulates selection of appropriate grippers based on object type. *(Partially implemented for PCB assembly)*
-**Many of these features are still under development or are planned for future iterations.**
+- **Gripper Selection**: Simulates selection of appropriate grippers based on object type. *(Implemented in SimpleGantrySimulation)*
+- **Advanced Robot Kinematics**:
+    - `arc_move`: Implemented in `SimpleGantrySimulation`, allowing the robot to move in a circular arc in the XY plane.
+    - `spiral_move`: Implemented in `SimpleGantrySimulation`, allowing the robot to move in a spiral pattern in 3D space.
+**Many of these features are still under development or are planned for future iterations, though core robot movements are becoming more robust.**
 
 ## Project Structure
 
@@ -59,12 +62,16 @@ vscodeProject2/
 ├── SimpleGantrySimulation      # Main entry point or core simulation logic
 ├── vscodeProject2.code-workspace # VS Code workspace file
 ├── improvements/               # Folder for planned or in-progress enhancements
-│   └── compound_movements.py   # Example: advanced robot movement logic
+│   └── compound_movements.py   # Defines logic for advanced robot movements like arc and spiral.
 ├── scenarios/                  # Contains different assembly line simulations
-│   ├── door_assembly.py        # Simulation for door assembly
+│   ├── door_assembly.py        # Simulation for door assembly, demonstrates arc and spiral moves.
 │   ├── engine_assembly.py      # Simulation for engine assembly
 │   └── pcb_assembly.py         # Simulation for PCB assembly
-└── README.md                   # This file
+├── README.md                   # This file
+├── requirements.txt            # Project dependencies
+└── tests/                      # Unit tests
+    ├── test_analyze_serial_data.py
+    └── test_gantry_robot.py
 ```
 
 ## Key Scenarios
@@ -114,7 +121,7 @@ graph TD
 ### Door Assembly (Conceptual)
 
 This scenario would simulate the assembly of a door, potentially involving larger components and different types of robotic operations.
-*(Details for this scenario are yet to be implemented. The `scenarios/door_assembly.py` file serves as a placeholder and is **not currently functional**.)*
+It is **partially implemented** and now demonstrates the use of `arc_move` for approaching hinge installation points and `spiral_move` for applying sealant in the `scenarios/door_assembly.py` script.
 
 **Conceptual Flow (High-Level):**
 ```mermaid
@@ -178,15 +185,11 @@ graph TD
     ```
 
 4.  **Install Dependencies**:
-    Currently, the project seems to rely on standard Python libraries. If specific packages are added (e.g., in a `requirements.txt` file), install them using:
+    A `requirements.txt` file is provided for development tools. Install them using:
     ```bash
-    # pip install -r requirements.txt
+    pip install -r requirements.txt
     ```
-    Based on the workspace settings, you might want to install linters and formatters:
-    ```bash
-    pip install pylint black
-    ```
-    **Note: As the project is under development, dependencies might change. A `requirements.txt` file will be added once dependencies stabilize.**
+    This will install `pylint` and `black`.
 
 5.  **VS Code Workspace Settings**:
     The `.code-workspace` file already configures Python path, formatting (black), linting (pylint), and testing (unittest). Open the `vscodeProject2.code-workspace` file in VS Code (`File > Open Workspace from File...`). VS Code might prompt you to select a Python interpreter; choose the one from your virtual environment if you created one.
@@ -247,13 +250,15 @@ python AnalyzeSerialData.py <arguments_if_any>
     - Conveyor movement.
     - Basic rework logic.
     - Detailed logging.
-- Placeholders for `door_assembly.py` and `engine_assembly.py` exist **and are not yet implemented**.
-- `improvements/compound_movements.py` suggests ongoing work on enhancing robot movement capabilities, **which is still conceptual**.
+- Placeholders for `engine_assembly.py` exist **and are not yet implemented**.
+- `door_assembly.py` is **partially implemented** and now showcases `arc_move` and `spiral_move`.
+- `improvements/compound_movements.py` now contains the implemented logic for `arc_move` and `spiral_move`, which are utilized by `SimpleGantrySimulation`.
 - VS Code tasks and launch configurations are set up for existing runnable parts.
+- **Unit tests** for `AnalyzeSerialData.py` and `SimpleGantrySimulation` (specifically the `GantryRobot` class) have been added in the `tests/` directory.
 
 **Potential Roadmap / Future Enhancements:**
 - **GUI Development**: Implement a graphical user interface to visualize the simulation.
-- **Advanced Robot Kinematics**: More realistic robot arm movements and collision detection (potentially leveraging `improvements/compound_movements.py`).
+- **Further Advanced Robot Kinematics**: More realistic robot arm movements and collision detection.
 - **Expanded Component Library**: Add more diverse components with complex properties.
 - **Detailed Scenario Implementation**: Fully develop `door_assembly.py` and `engine_assembly.py`.
 - **Data Analysis & Reporting**: Enhance `AnalyzeSerialData.py` or create new tools for in-depth analysis of simulation outputs (e.g., cycle times, failure rates, OEE).
@@ -263,7 +268,7 @@ python AnalyzeSerialData.py <arguments_if_any>
 - **Parallel Execution**: Explore options for running parts of the simulation in parallel for performance.
 - **Integration with External Tools**: Allow connection to PLCs, OPC UA servers, or other manufacturing software.
 - **Machine Learning Integration**: Use ML for optimizing assembly sequences or predictive maintenance based on simulated wear and tear.
-- **Comprehensive Unit and Integration Tests**: Expand test coverage.
+- **Comprehensive Unit and Integration Tests**: Continue to expand test coverage for all modules and scenarios.
 
 ## Logging
 
@@ -281,8 +286,18 @@ It's recommended to format and lint your code before committing changes. VS Code
 
 ## Testing
 
-- `unittest` is enabled as the testing framework.
-- `pytest` and `nosetests` are currently disabled.
+- `unittest` is the testing framework used for this project.
+- Test files are located in the `tests/` directory. Currently, this includes:
+    - `tests/test_analyze_serial_data.py`: Contains unit tests for the `process_serial_data` function.
+    - `tests/test_gantry_robot.py`: Contains unit tests for the `GantryRobot` class from `SimpleGantrySimulation`.
+- To run all tests, navigate to the project root directory in your terminal (where `tests/` is a subdirectory) and execute:
+  ```bash
+  python -m unittest discover tests
+  ```
+  Alternatively, individual test files can be run directly:
+  ```bash
+  python tests/test_gantry_robot.py
+  ```
 
 Test files should be created to ensure the reliability of the simulation logic, especially for robot movements, component interactions, and scenario execution.
 

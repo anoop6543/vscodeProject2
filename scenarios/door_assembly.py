@@ -2,6 +2,7 @@ import sys
 import os
 import logging
 from datetime import datetime
+import math
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -41,8 +42,35 @@ class DoorAssemblyStation:
         
         for i, pos in enumerate(hinge_positions):
             logger.info(f"Installing hinge {i+1}/2")
-            # Approach with precision
-            self.gantry.move_to((pos[0]-50, pos[1], pos[2]+30), (45, 0))
+
+            # New arc move:
+            logger.info(f"Moving to approach hinge {i+1} area with an arc path")
+            # Get current gantry position (X, Y, Z) from motors
+            # Assuming motor indices 0, 1, 2 are X, Y, Z respectively
+            arc_start_point = (self.gantry.motors[0].position, 
+                               self.gantry.motors[1].position, 
+                               self.gantry.motors[2].position)
+            arc_end_point_xyz = (pos[0]-50, pos[1], pos[2]+30) # Target endpoint for the arc
+            
+            # Define a center for the arc, e.g. offset from start or midpoint
+            # For simplicity, let's try to make a gentle curve.
+            # If start_x is far from end_x, use that difference. Otherwise, create an offset perpendicular to the general direction.
+            # Let's use a simpler center calculation for now:
+            arc_center_x = (arc_start_point[0] + arc_end_point_xyz[0]) / 2
+            arc_center_y = arc_start_point[1] + 50 # Create a curve by offsetting Y
+            arc_center_xy = (arc_center_x, arc_center_y)
+            
+            # Ensure the start_point for arc_move is indeed where the gantry is.
+            # The arc_move itself does not move to start_point, it calculates path from it.
+            # Current gantry.move_to updates motor positions, so arc_start_point should be accurate.
+
+            self.gantry.arc_move(start_point=arc_start_point, 
+                                 end_point=arc_end_point_xyz, 
+                                 center_point=arc_center_xy, 
+                                 speed=800)
+            # After arc_move, gantry is at arc_end_point_xyz. Now set desired orientation.
+            self.gantry.move_to(arc_end_point_xyz, (45,0)) # Ensure final orientation is set
+
             # Precision movement
             self.gantry.select_gripper(ObjectType.METAL_PART)
             
@@ -99,8 +127,29 @@ class DoorAssemblyStation:
         # Define weather strip path around the door
         strip_path = [
             (260, 150, 25), (260, 250, 25), (340, 250, 25), 
-            (340, 150, 25), (260, 150, 25)
+            (340, 150, 25), (260, 150, 25) # Back to start to complete loop
         ]
+
+        # New spiral move for sealant application at a corner before stripping:
+        # This simulates applying a circular bead of sealant before placing the main strip.
+        sealant_application_center = (strip_path[0][0] - 5, strip_path[0][1] - 5) # Near the start of the strip path
+        sealant_z_level = strip_path[0][2] # Same Z as weather strip
+        
+        logger.info(f"Applying sealant in a spiral pattern at {sealant_application_center} before weather stripping.")
+        # First, move to a safe start Z above the sealant application point
+        self.gantry.move_to((sealant_application_center[0], sealant_application_center[1], sealant_z_level + 20), (0,0))
+        
+        self.gantry.spiral_move(
+            center_xy=sealant_application_center,
+            start_radius=2,  # Start with a small radius
+            end_radius=10,   # Spiral outwards to a 10mm radius
+            total_angle_rad=math.pi * 4,  # Two full rotations (2 * 2pi)
+            z_start=sealant_z_level,      # Start at the application Z
+            z_increment_per_rad=0.05,     # Slightly go down as it spirals (0.05mm per radian)
+                                          # Total Z change: 0.05 * 4 * pi approx 0.628 mm
+            speed=300                     # Speed for spiral segments
+        )
+        logger.info("Sealant application spiral complete.")
         
         self.gantry.select_gripper(ObjectType.SOFT)
         # Get weather strip roll
