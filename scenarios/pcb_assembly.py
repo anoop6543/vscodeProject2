@@ -284,6 +284,33 @@ class PCBAssemblyLine:
                     self.place_component("placer", comp_name, pcb_position, rotation)
                     reinspection = self.inspect_component("inspector", comp_name, pcb_position)
                     self.main_logger.info(f"Rework result: {'SUCCESS' if reinspection else 'FAILURE'}")
+
+            # After loop, before moving PCB out:
+            self.main_logger.info(f"All components processed for PCB {pcb_index+1}. Proceeding to laser marking.")
+            
+            # Assume marking is done by the 'inspector' robot
+            inspector_robot = self.robots["inspector"]
+            
+            # Define marking parameters
+            # Position can be relative to PCB or a fixed station point
+            # Let's assume the PCB is at conveyor_position + some offset for the center.
+            # Current conveyor_position would be 300 after loading this PCB.
+            # Let's mark near the center of a typical PCB of size, say, 100x100, placed at x=200, y=150.
+            # If the conveyor moves the PCB origin to (0,0) at the station, then mark_target_point would be relative to PCB.
+            # For simplicity, let's use a fixed point relative to the gantry's workspace that represents the marking station for the PCB.
+            # Assuming the PCB is now at a position where (e.g. 200,150) on PCB is (200,150) in gantry coordinates.
+            mark_target_point = (200 + 50, 150 + 50, 5 + 1) # Mark on top of PCB, slightly offset from center, Z just above surface.
+            serial_number = f"PCB_SN_{datetime.now().strftime('%Y%m%d%H%M%S')}_{pcb_index+1}"
+            
+            self.robot_loggers["inspector"].info(f"Performing laser marking for PCB {pcb_index+1}. Serial: {serial_number}")
+            inspector_robot.laser_mark(
+                target_point=mark_target_point,
+                text=serial_number,
+                speed=150, # mm/s
+                power=30,  # Watts for marking
+                font_size=2 # Small font for PCB
+            )
+            self.robot_loggers["inspector"].info(f"Laser marking completed for PCB {pcb_index+1}")
             
             # Move completed PCB out
             self.move_conveyor(300)

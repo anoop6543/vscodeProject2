@@ -104,6 +104,26 @@ def engine_assembly_sequence():
         for _ in range(5):  # Multiple rotations to simulate tightening
             gantry.drives[5].command_move(360, speed=120)  # Rotate
             time.sleep(0.5)  # Simulate time to tighten
+
+    # Phase 6.5: Welding critical seam on cylinder head
+    logger.info("Phase 6.5: Welding critical seam on cylinder head")
+    # Define weld path (e.g., a short line on the cylinder head)
+    # These points are illustrative and should align with the engine model.
+    # Assuming the cylinder head is around (210, 200, 25)
+    weld_start_point = (190, 190, 26) # Start point of the weld seam
+    weld_end_point = (230, 190, 26)   # End point of the weld seam
+    
+    # Ensure gantry is at a safe height before starting weld sequence, if needed
+    # gantry.move_to((weld_start_point[0], weld_start_point[1], weld_start_point[2] + 10), (0,0))
+
+    gantry.laser_weld(
+        start_point=weld_start_point,
+        end_point=weld_end_point,
+        speed=15,      # mm/s, adjusted for precision
+        power=1800,    # Watts, typical for steel
+        focus_setting=-0.2 # Focus slightly into the material
+    )
+    logger.info("Critical seam welding completed.")
     
     logger.info("Engine assembly sequence completed")
 

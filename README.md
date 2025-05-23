@@ -49,7 +49,10 @@ To create a comprehensive simulation environment that enables:
 - **Advanced Robot Kinematics**:
     - `arc_move`: Implemented in `SimpleGantrySimulation`, allowing the robot to move in a circular arc in the XY plane.
     - `spiral_move`: Implemented in `SimpleGantrySimulation`, allowing the robot to move in a spiral pattern in 3D space.
-**Many of these features are still under development or are planned for future iterations, though core robot movements are becoming more robust.**
+- **Laser Operations (New)**:
+    - `laser_weld`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate linear laser welding between two points with specified parameters (speed, power, focus).
+    - `laser_mark`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate laser marking of text at a target point with specified parameters.
+**Many of these features are still under development or are planned for future iterations, though core robot movements and tooling capabilities are becoming more robust.**
 
 ## Project Structure
 
@@ -65,13 +68,13 @@ vscodeProject2/
 │   └── compound_movements.py   # Defines logic for advanced robot movements like arc and spiral.
 ├── scenarios/                  # Contains different assembly line simulations
 │   ├── door_assembly.py        # Simulation for door assembly, demonstrates arc and spiral moves.
-│   ├── engine_assembly.py      # Simulation for engine assembly
-│   └── pcb_assembly.py         # Simulation for PCB assembly
+│   ├── engine_assembly.py      # Simulation for engine assembly, now includes a laser welding step.
+│   └── pcb_assembly.py         # Simulation for PCB assembly, now includes a laser marking step.
 ├── README.md                   # This file
 ├── requirements.txt            # Project dependencies
 └── tests/                      # Unit tests
     ├── test_analyze_serial_data.py
-    └── test_gantry_robot.py
+    └── test_gantry_robot.py    # Unit tests for GantryRobot class, including laser functions.
 ```
 
 ## Key Scenarios
@@ -116,6 +119,7 @@ graph TD
 - **Feeder Positions**: Specifies where each component is located in the feeder system.
 - **PCB Specification**: A list defining which components go where on the PCB, including their position and rotation.
 - **Inspection Checks**: Presence, alignment, polarity, solder quality.
+- **Laser Marking**: After assembly, the inspector robot performs laser marking of a serial number on the PCB.
 - **Metrics Tracked**: Placement accuracy, cycle times.
 
 ### Door Assembly (Conceptual)
@@ -141,7 +145,7 @@ graph TD
 ### Engine Assembly (Conceptual)
 
 This scenario would simulate the complex process of assembling an engine, involving multiple parts, precision fitting, and torqueing operations.
-*(Details for this scenario are yet to be implemented. The `scenarios/engine_assembly.py` file serves as a placeholder and is **not currently functional**.)*
+It is **partially implemented** and now demonstrates `laser_weld` for welding a critical seam on the cylinder head in the `scenarios/engine_assembly.py` script.
 
 **Conceptual Flow (High-Level):**
 ```mermaid
@@ -252,9 +256,12 @@ python AnalyzeSerialData.py <arguments_if_any>
     - Detailed logging.
 - Placeholders for `engine_assembly.py` exist **and are not yet implemented**.
 - `door_assembly.py` is **partially implemented** and now showcases `arc_move` and `spiral_move`.
+- `engine_assembly.py` is **partially implemented** and now includes a `laser_weld` step.
+- `pcb_assembly.py` now includes a `laser_mark` step for serial number etching.
 - `improvements/compound_movements.py` now contains the implemented logic for `arc_move` and `spiral_move`, which are utilized by `SimpleGantrySimulation`.
+- `SimpleGantrySimulation`'s `GantryRobot` class now includes `laser_weld` and `laser_mark` methods.
 - VS Code tasks and launch configurations are set up for existing runnable parts.
-- **Unit tests** for `AnalyzeSerialData.py` and `SimpleGantrySimulation` (specifically the `GantryRobot` class) have been added in the `tests/` directory.
+- **Unit tests** for `AnalyzeSerialData.py` and `SimpleGantrySimulation` (specifically the `GantryRobot` class, including laser functions) have been added in the `tests/` directory.
 
 **Potential Roadmap / Future Enhancements:**
 - **GUI Development**: Implement a graphical user interface to visualize the simulation.
@@ -289,7 +296,7 @@ It's recommended to format and lint your code before committing changes. VS Code
 - `unittest` is the testing framework used for this project.
 - Test files are located in the `tests/` directory. Currently, this includes:
     - `tests/test_analyze_serial_data.py`: Contains unit tests for the `process_serial_data` function.
-    - `tests/test_gantry_robot.py`: Contains unit tests for the `GantryRobot` class from `SimpleGantrySimulation`.
+    - `tests/test_gantry_robot.py`: Contains unit tests for the `GantryRobot` class from `SimpleGantrySimulation`, including its movement (e.g., `move_to`, `extend_retract`) and laser (`laser_weld`, `laser_mark`) functionalities.
 - To run all tests, navigate to the project root directory in your terminal (where `tests/` is a subdirectory) and execute:
   ```bash
   python -m unittest discover tests

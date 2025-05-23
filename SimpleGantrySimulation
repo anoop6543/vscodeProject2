@@ -95,6 +95,7 @@ class GantryRobot:
             Gripper(GripperType.SOFT)
         ]
         self.current_gripper = self.grippers[0]
+        self.laser_status = "OFF" # Added for laser_weld
 
     def arc_move(self, start_point: Tuple[float, float, float], 
                  end_point: Tuple[float, float, float], 
@@ -366,6 +367,153 @@ if __name__ == "__main__":
         speed=500
     )
 
+    def laser_weld(self, start_point: Tuple[float,float,float], 
+                   end_point: Tuple[float,float,float], 
+                   speed: float, power: float, focus_setting: float):
+        """
+        Simulates a laser welding operation from start_point to end_point.
+        Maintains current orientation (Rotate, Tilt).
+        """
+        print(f"\n[GantryRobot] Starting laser weld from {start_point} to {end_point} at {speed} mm/s, power {power}W, focus {focus_setting}.")
+        self.laser_status = "WELDING"
+        print(f"[GantryRobot] Laser status: {self.laser_status}")
+
+        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        current_rotate_pos = self.motors[5].position
+        current_tilt_pos = self.motors[6].position
+        current_orientation = (current_rotate_pos, current_tilt_pos)
+
+        # Move to the start point of the weld
+        print(f"[GantryRobot-LaserWeld] Moving to weld start point: {start_point}")
+        self.move_to(start_point, current_orientation)
+        
+        sx, sy, sz = start_point
+        ex, ey, ez = end_point
+
+        # Calculate path details
+        dx = ex - sx
+        dy = ey - sy
+        dz = ez - sz
+        distance = math.sqrt(dx**2 + dy**2 + dz**2)
+
+        if math.isclose(distance, 0):
+            print("[GantryRobot-LaserWeld] Start and end points are the same. No weld path to follow.")
+            # Even if distance is zero, simulate a spot weld or just log
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (spot weld)")
+        elif speed <= 0:
+            print("[GantryRobot-LaserWeld] Speed is zero or negative. Cannot simulate path. Moving directly to end point.")
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (final point)")
+        else:
+            time_increment = 0.1  # seconds per step
+            step_length = speed * time_increment
+            num_steps = int(distance / step_length)
+            
+            if num_steps == 0: # If distance is very small or speed very high
+                num_steps = 1 # Ensure at least one step to cover the path
+
+            print(f"[GantryRobot-LaserWeld] Weld path distance: {distance:.2f}mm, Steps: {num_steps}")
+
+            for i in range(num_steps + 1):
+                fraction = i / num_steps
+                current_x = sx + fraction * dx
+                current_y = sy + fraction * dy
+                current_z = sz + fraction * dz
+                
+                # Directly update motor positions for X, Y, Z
+                self.motors[0].position = current_x
+                self.motors[1].position = current_y
+                self.motors[2].position = current_z
+                # Update sensor readings if we had a direct way to do so, or rely on motor.move_to if we used that
+                # For now, direct update is fine as per requirement.
+                
+                print(f"[GantryRobot-LaserWeld] Welding at ({current_x:.2f}, {current_y:.2f}, {current_z:.2f})")
+                # Optional: time.sleep(time_increment) if real-time simulation effect is desired
+
+            # Ensure final position is exactly at end_point
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Ensuring final weld position at ({ex:.2f}, {ey:.2f}, {ez:.2f})")
+
+        self.laser_status = "OFF"
+        print(f"[GantryRobot] Laser weld completed. Laser status: {self.laser_status}")
+
+
+    # Test arc_move
+    # Scenario 1: 90-degree arc
+
+    # Test laser_weld
+    print("\n--- Testing Laser Weld ---")
+    gantry.laser_weld(
+        start_point=(50, 50, 50),
+        end_point=(150, 50, 50),
+        speed=20,      # mm/s
+        power=1500,    # Watts
+        focus_setting=0.5 # Arbitrary focus value
+    )
+    # Check gantry position after weld - should be at end_point
+    print(f"Gantry position after weld: X={gantry.motors[0].position}, Y={gantry.motors[1].position}, Z={gantry.motors[2].position}")
+    print(f"Laser status after weld: {gantry.laser_status}")
+
+    print("\n--- Testing Laser Weld (Zero Distance) ---")
+    gantry.laser_weld(
+        start_point=(10,10,10),
+        end_point=(10,10,10),
+        speed=10, power=500, focus_setting=0.2
+    )
+
+    def laser_mark(self, target_point: Tuple[float,float,float], 
+                   text: str, speed: float, power: float, font_size: float = 10.0):
+        """
+        Simulates a laser marking operation at a target_point.
+        Maintains current orientation (Rotate, Tilt).
+        """
+        print(f"\n[GantryRobot] Starting laser mark at {target_point} with text '{text}', speed {speed} mm/s, power {power}W, font size {font_size}.")
+        self.laser_status = "MARKING"
+        print(f"[GantryRobot] Laser status: {self.laser_status}")
+
+        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        current_rotate_pos = self.motors[5].position
+        current_tilt_pos = self.motors[6].position
+        current_orientation = (current_rotate_pos, current_tilt_pos)
+
+        # Move to the target point for marking
+        print(f"[GantryRobot-LaserMark] Moving to mark target point: {target_point}")
+        self.move_to(target_point, current_orientation)
+        
+        # Simulate Marking Process
+        print(f"[GantryRobot-LaserMark] Marking text: '{text}'")
+        
+        # Simplified duration calculation: assume each character takes a certain amount of time
+        # A more complex simulation might consider the path length of the text strokes and actual speed.
+        # For now, let's say each character takes a fixed time inversely proportional to speed,
+        # or simply a fixed time like 0.1s per char.
+        # Let's use a base time per character and adjust by a factor of speed.
+        # For example, 0.2s per char at a nominal speed of 50mm/s.
+        # If speed is 100mm/s, time is 0.1s. If speed is 25mm/s, time is 0.4s.
+        # So, duration_per_char = (0.2 * 50) / speed if speed > 0 else 0.2 * 50 (avoid div by zero)
+        
+        if speed > 0:
+            # Example: Assume 10 units of "work" per character.
+            # marking_duration = (len(text) * 10.0) / speed
+            # Simpler: 0.1s per character, speed parameter is for approach or a general setting.
+             marking_duration = len(text) * 0.1 # seconds
+        else:
+            marking_duration = len(text) * 0.5 # Longer default if speed is zero/invalid
+
+        print(f"[GantryRobot-LaserMark] Simulated marking duration: {marking_duration:.2f}s")
+        # import time # Would be needed for actual sleep
+        # time.sleep(marking_duration) # Uncomment for real-time simulation effect
+
+        self.laser_status = "OFF"
+        print(f"[GantryRobot] Laser mark completed. Laser status: {self.laser_status}")
+
     # Test spiral_move
     print("\n--- Testing Spiral Move: Scenario 1 (Flat Outward Spiral) ---")
     gantry.spiral_move(
@@ -377,6 +525,18 @@ if __name__ == "__main__":
         z_increment_per_rad=0,    # Flat spiral
         speed=500
     )
+
+    # Test laser_mark
+    print("\n--- Testing Laser Mark ---")
+    gantry.laser_mark(
+        target_point=(150, 150, 5),
+        text="SERIAL12345-XYZ",
+        speed=100,      # mm/s (used conceptually for duration)
+        power=500,      # Watts
+        font_size=8.0
+    )
+    print(f"Gantry position after mark: X={gantry.motors[0].position}, Y={gantry.motors[1].position}, Z={gantry.motors[2].position}")
+    print(f"Laser status after mark: {gantry.laser_status}")
 
     print("\n--- Testing Spiral Move: Scenario 2 (Upward Inward Spiral) ---")
     gantry.spiral_move(

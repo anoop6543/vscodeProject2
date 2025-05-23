@@ -21,6 +21,8 @@ class TestGantryRobot(unittest.TestCase):
     def setUp(self):
         """Set up for test methods."""
         self.robot = GantryRobot()
+        # self.LOG_PREFIX = "[GantryRobot] " # Removed as per new strategy
+        # self.robot.LOG_PREFIX = self.LOG_PREFIX # Removed
 
     def test_initialization(self):
         """Test the GantryRobot's initial state."""
@@ -28,6 +30,7 @@ class TestGantryRobot(unittest.TestCase):
         self.assertEqual(len(self.robot.drives), 8, "Should have 8 drives")
         self.assertIsNotNone(self.robot.force_sensor, "Force sensor should be initialized")
         self.assertEqual(self.robot.current_gripper.gripper_type, GripperType.SUCTION, "Default gripper should be Suction")
+        self.assertEqual(self.robot.laser_status, "OFF", "Laser should be OFF initially")
 
     @patch('builtins.print') # Mock print to avoid console output during tests
     def test_select_gripper(self, mock_print):
@@ -95,7 +98,7 @@ class TestGantryRobot(unittest.TestCase):
     @patch('builtins.print') # Mock print for logging
     def test_pick_and_place_flow(self, mock_print, mock_get_force, mock_gripper_place, 
                                mock_gripper_pick, mock_operate_gripper, 
-                               mock_extend_retract, mock_move_to, mock_select_gripper):
+                               mock_extend_retract, mock_move_to_gantry, mock_select_gripper): # Renamed mock_move_to to mock_move_to_gantry
         """Test the sequence of operations in pick_and_place."""
         obj_type = ObjectType.METAL_PART
         pick_pos = (10, 20, 30)
@@ -112,8 +115,8 @@ class TestGantryRobot(unittest.TestCase):
             call(pick_pos, (0,0)), # Initial move to pick_pos
             call(place_pos, (0,0)) # Move to place_pos
         ]
-        mock_move_to.assert_has_calls(move_to_calls)
-        self.assertEqual(mock_move_to.call_count, 2)
+        mock_move_to_gantry.assert_has_calls(move_to_calls) # Use renamed mock
+        self.assertEqual(mock_move_to_gantry.call_count, 2) # Use renamed mock
 
         # Check calls to extend_retract
         # Expected: Extend(T), Retract(F), Extend(T), Retract(F)
@@ -157,6 +160,71 @@ class TestGantryRobot(unittest.TestCase):
         # self.assertEqual(self.robot.motors[0].position, place_pos[0])
         # self.assertEqual(self.robot.motors[1].position, place_pos[1])
         # self.assertEqual(self.robot.motors[2].position, place_pos[2])
+
+    @patch('builtins.print')
+    def test_laser_weld(self, mock_print):
+        start_point = (10.0, 20.0, 30.0)
+        end_point = (110.0, 20.0, 30.0) # 100mm weld in X
+        speed = 20.0
+        power = 1500.0
+        focus = 0.1
+
+        self.assertEqual(self.robot.laser_status, "OFF")
+        self.robot.laser_weld(start_point, end_point, speed, power, focus)
+        self.assertEqual(self.robot.laser_status, "OFF")
+
+        self.assertEqual(self.robot.motors[0].position, end_point[0])
+        self.assertEqual(self.robot.motors[1].position, end_point[1])
+        self.assertEqual(self.robot.motors[2].position, end_point[2])
+        
+        # Robust log checking
+        logs = [call_arg[0][0] for call_arg in mock_print.call_args_list] # Extract all printed strings
+        
+        self.assertTrue(any(f"Starting laser weld from {start_point} to {end_point}" in log for log in logs), "Missing: Starting weld log")
+        self.assertTrue(any("Laser status: WELDING" in log for log in logs), "Missing: Laser status WELDING log")
+        self.assertTrue(any(f"LaserWeld: Moving to weld start point: {start_point}" in log for log in logs), "Missing: Moving to weld start log")
+        self.assertTrue(any(f"LaserWeld: Weld path distance: {100.00:.2f}mm" in log for log in logs), "Missing: Weld path distance log")
+        self.assertTrue(any(f"LaserWeld: Welding at ({end_point[0]:.2f}, {end_point[1]:.2f}, {end_point[2]:.2f})" in log for log in logs), "Missing: Welding at end_point log")
+        self.assertTrue(any(f"LaserWeld: Ensuring final weld position at ({end_point[0]:.2f}, {end_point[1]:.2f}, {end_point[2]:.2f})" in log for log in logs), "Missing: Ensuring final weld position log")
+        self.assertTrue(any("Laser weld completed. Laser status: OFF" in log for log in logs), "Missing: Weld completed log")
+
+        # Test spot weld (zero distance)
+        mock_print.reset_mock()
+        spot_point = (5.0, 5.0, 5.0)
+        self.robot.laser_weld(spot_point, spot_point, speed, power, focus)
+        self.assertEqual(self.robot.laser_status, "OFF")
+        self.assertEqual(self.robot.motors[0].position, spot_point[0])
+        
+        logs = [call_arg[0][0] for call_arg in mock_print.call_args_list]
+        self.assertTrue(any("LaserWeld: Start and end points are the same." in log for log in logs), "Missing: Spot weld start/end same log")
+        self.assertTrue(any(f"LaserWeld: Welding at ({spot_point[0]:.2f}, {spot_point[1]:.2f}, {spot_point[2]:.2f}) (spot weld)" in log for log in logs), "Missing: Spot weld action log")
+
+    @patch('builtins.print')
+    def test_laser_mark(self, mock_print):
+        target_point = (50.0, 60.0, 70.0)
+        text_to_mark = "TestSN123"
+        speed = 50.0
+        power = 100.0
+        font_size = 12.0
+
+        self.assertEqual(self.robot.laser_status, "OFF")
+        self.robot.laser_mark(target_point, text_to_mark, speed, power, font_size)
+        self.assertEqual(self.robot.laser_status, "OFF")
+
+        self.assertEqual(self.robot.motors[0].position, target_point[0])
+        self.assertEqual(self.robot.motors[1].position, target_point[1])
+        self.assertEqual(self.robot.motors[2].position, target_point[2])
+
+        # Robust log checking
+        logs = [call_arg[0][0] for call_arg in mock_print.call_args_list]
+
+        self.assertTrue(any(f"Starting laser mark at {target_point} with text '{text_to_mark}'" in log for log in logs), "Missing: Starting mark log")
+        self.assertTrue(any("Laser status: MARKING" in log for log in logs), "Missing: Laser status MARKING log")
+        self.assertTrue(any(f"LaserMark: Moving to mark target point: {target_point}" in log for log in logs), "Missing: Moving to mark target log")
+        self.assertTrue(any(f"LaserMark: Marking text: '{text_to_mark}'" in log for log in logs), "Missing: Marking text log")
+        # Duration is calculated, check for its presence rather than exact value if it's complex
+        self.assertTrue(any("LaserMark: Simulated marking duration:" in log for log in logs), "Missing: Simulated duration log")
+        self.assertTrue(any("Laser mark completed. Laser status: OFF" in log for log in logs), "Missing: Mark completed log")
 
 if __name__ == '__main__':
     unittest.main()
