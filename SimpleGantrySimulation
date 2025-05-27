@@ -2,6 +2,7 @@ import random
 from enum import Enum
 from typing import List, Tuple
 import math
+from sim_opc_server import sim_opc_instance # Assuming sim_opc_server.py is in root
 
 # Enums for Gripper Types and Object Types
 class GripperType(Enum):
@@ -97,6 +98,12 @@ class GantryRobot:
         self.current_gripper = self.grippers[0]
         self.laser_status = "OFF" # Added for laser_weld
 
+        # OPC Integration: Initialize robot state tags
+        sim_opc_instance.write_tag("GantryRobot.AxisX.ActualPosition", self.motors[0].position)
+        sim_opc_instance.write_tag("GantryRobot.AxisY.ActualPosition", self.motors[1].position)
+        sim_opc_instance.write_tag("GantryRobot.AxisZ.ActualPosition", self.motors[2].position)
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
+
     def arc_move(self, start_point: Tuple[float, float, float], 
                  end_point: Tuple[float, float, float], 
                  center_point: Tuple[float, float], 
@@ -107,6 +114,7 @@ class GantryRobot:
         Orientation (rotate, tilt) is kept constant at current motor positions.
         """
         print("\nStarting arc movement...")
+        sim_opc_instance.write_tag("GantryRobot.Status", "Arcing")
         
         x1, y1, z1 = start_point
         x2, y2, _ = end_point  # z2 from end_point is not used for path, Z is constant from z1
@@ -193,9 +201,10 @@ class GantryRobot:
         # Ensure the robot is precisely at the intended end_point (x2,y2,z1)
         # This corrects any potential floating point errors from interpolation.
         print(f"Ensuring robot reaches final arc point: ({x2:.2f}, {y2:.2f}, {z1:.2f})")
-        self.move_to((x2, y2, z1), current_orientation)
+        self.move_to((x2, y2, z1), current_orientation) # move_to will set status to Idle after
         
         print("Arc movement finished.")
+        # sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Handled by final move_to
 
     def select_gripper(self, obj_type: ObjectType):
         if obj_type == ObjectType.BOX or obj_type == ObjectType.SHEET:
@@ -209,12 +218,18 @@ class GantryRobot:
         print(f"Selected gripper: {self.current_gripper.gripper_type.value}")
 
     def move_to(self, position: Tuple[float, float, float], orientation: Tuple[float, float]):
+        sim_opc_instance.write_tag("GantryRobot.Status", "Moving")
         # position: (x, y, z), orientation: (rotate, tilt)
         axes = ["X", "Y", "Z", "Rotate", "Tilt"]
         values = list(position) + list(orientation)
-        for i, axis in enumerate(axes):
+        for i, axis_name_enum in enumerate(axes): # Renamed 'axis' to 'axis_name_enum' to avoid conflict
             self.drives[i].command_move(values[i], speed=1000)
-            print(f"Sensor-{axis}: {self.position_sensors[i].get_position(self.motors[i])}")
+            print(f"Sensor-{axis_name_enum}: {self.position_sensors[i].get_position(self.motors[i])}")
+            # OPC Update for X, Y, Z axes
+            if i < 3: # Indices 0, 1, 2 correspond to X, Y, Z
+                sim_opc_instance.write_tag(f"GantryRobot.Axis{axis_name_enum}.ActualPosition", values[i])
+        
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Set to Idle after movement completes
 
     def extend_retract(self, extend: bool):
         idx = 3 if extend else 4
@@ -241,6 +256,7 @@ class GantryRobot:
         self.operate_gripper(True)
         self.current_gripper.place(place_pos)
         self.extend_retract(False)
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Explicitly set to Idle after all pick_and_place ops
 
 # Example usage
 if __name__ == "__main__":
@@ -268,6 +284,7 @@ if __name__ == "__main__":
         speed: movement speed for individual segments.
         """
         print("\nStarting spiral movement...")
+        sim_opc_instance.write_tag("GantryRobot.Status", "Spiraling")
         xc, yc = center_xy
 
         # Determine current orientation (Rotate, Tilt) - assuming motors 5 and 6
@@ -352,9 +369,10 @@ if __name__ == "__main__":
         final_y = yc + end_radius * math.sin(total_angle_rad)
         final_z = z_start + total_angle_rad * z_increment_per_rad
         print(f"Ensuring robot reaches final spiral point: ({final_x:.2f}, {final_y:.2f}, {final_z:.2f})")
-        self.move_to((final_x, final_y, final_z), current_orientation)
+        self.move_to((final_x, final_y, final_z), current_orientation) # move_to will set status to Idle
         
         print("Spiral movement finished.")
+        # sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Handled by final move_to
 
 
     # Test arc_move
@@ -376,6 +394,7 @@ if __name__ == "__main__":
         """
         print(f"\n[GantryRobot] Starting laser weld from {start_point} to {end_point} at {speed} mm/s, power {power}W, focus {focus_setting}.")
         self.laser_status = "WELDING"
+        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
         print(f"[GantryRobot] Laser status: {self.laser_status}")
 
         # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
@@ -442,6 +461,7 @@ if __name__ == "__main__":
             print(f"[GantryRobot-LaserWeld] Ensuring final weld position at ({ex:.2f}, {ey:.2f}, {ez:.2f})")
 
         self.laser_status = "OFF"
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
         print(f"[GantryRobot] Laser weld completed. Laser status: {self.laser_status}")
 
 
@@ -476,6 +496,7 @@ if __name__ == "__main__":
         """
         print(f"\n[GantryRobot] Starting laser mark at {target_point} with text '{text}', speed {speed} mm/s, power {power}W, font size {font_size}.")
         self.laser_status = "MARKING"
+        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
         print(f"[GantryRobot] Laser status: {self.laser_status}")
 
         # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
@@ -512,6 +533,7 @@ if __name__ == "__main__":
         # time.sleep(marking_duration) # Uncomment for real-time simulation effect
 
         self.laser_status = "OFF"
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
         print(f"[GantryRobot] Laser mark completed. Laser status: {self.laser_status}")
 
     # Test spiral_move

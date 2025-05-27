@@ -52,6 +52,11 @@ To create a comprehensive simulation environment that enables:
 - **Laser Operations (New)**:
     - `laser_weld`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate linear laser welding between two points with specified parameters (speed, power, focus).
     - `laser_mark`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate laser marking of text at a target point with specified parameters.
+- **Simulated Database (In-Memory)**: Manages data for recipes, production results, errors, and KPIs. *(Implemented in `sim_database_manager.py`)*
+- **Enhanced File Logging**: Structured JSON logs for errors, production results, and KPIs with log rotation. *(Implemented in `file_logger.py`)*
+- **Simulated OPC Communication**: Mimics an OPC server for tag-based data exchange, with example integration in scenarios. *(Implemented in `sim_opc_server.py`)*
+- **KPI Calculation & Storage**: Calculates and stores key manufacturing KPIs like OEE, availability, performance, etc., based on simulated data. *(Implemented in `kpi_calculator.py`)*
+- **Simulated AWS Logging**: Generates structured JSON logs mimicking cloud logging services, with categorization and integration for various application events. *(Implemented in `aws_logger_sim.py`)*
 **Many of these features are still under development or are planned for future iterations, though core robot movements and tooling capabilities are becoming more robust.**
 
 ## Project Structure
@@ -63,18 +68,28 @@ vscodeProject2/
 │   └── tasks.json              # Task configurations
 ├── AnalyzeSerialData.py        # Script for analyzing serial data (purpose to be detailed)
 ├── SimpleGantrySimulation      # Main entry point or core simulation logic
+├── sim_database_manager.py     # Handles in-memory simulation of database tables for recipes, results, errors, and KPIs.
+├── file_logger.py              # Manages structured JSON logging to files for errors, production results, and KPIs, including log rotation.
+├── sim_opc_server.py           # Simulates a basic OPC server with tag storage and read/write capabilities.
+├── kpi_calculator.py           # Contains functions to calculate various manufacturing KPIs.
+├── aws_logger_sim.py           # Simulates sending structured JSON logs to an AWS CloudWatch-like file (`logs/aws_sim_cloudwatch.log`).
 ├── vscodeProject2.code-workspace # VS Code workspace file
 ├── improvements/               # Folder for planned or in-progress enhancements
 │   └── compound_movements.py   # Defines logic for advanced robot movements like arc and spiral.
 ├── scenarios/                  # Contains different assembly line simulations
 │   ├── door_assembly.py        # Simulation for door assembly, demonstrates arc and spiral moves.
 │   ├── engine_assembly.py      # Simulation for engine assembly, now includes a laser welding step.
-│   └── pcb_assembly.py         # Simulation for PCB assembly, now includes a laser marking step.
+│   └── pcb_assembly.py         # Simulation for PCB assembly, now includes laser marking and database logging.
 ├── README.md                   # This file
 ├── requirements.txt            # Project dependencies
 └── tests/                      # Unit tests
     ├── test_analyze_serial_data.py
-    └── test_gantry_robot.py    # Unit tests for GantryRobot class, including laser functions.
+    ├── test_gantry_robot.py    # Unit tests for GantryRobot class, including laser functions.
+    ├── test_sim_database_manager.py # Unit tests for the database simulation module.
+    ├── test_file_logger.py     # Unit tests for the enhanced file logging module.
+    ├── test_sim_opc_server.py  # Unit tests for the OPC server simulation.
+    ├── test_kpi_calculator.py  # Unit tests for KPI calculation logic.
+    └── test_aws_logger_sim.py  # Unit tests for the AWS logging simulation module.
 ```
 
 ## Key Scenarios
@@ -120,6 +135,7 @@ graph TD
 - **PCB Specification**: A list defining which components go where on the PCB, including their position and rotation.
 - **Inspection Checks**: Presence, alignment, polarity, solder quality.
 - **Laser Marking**: After assembly, the inspector robot performs laser marking of a serial number on the PCB.
+- **Database Logging**: Records the recipe used, production results (success/failure), and any errors encountered during the assembly process into the simulated database.
 - **Metrics Tracked**: Placement accuracy, cycle times.
 
 ### Door Assembly (Conceptual)
@@ -257,11 +273,12 @@ python AnalyzeSerialData.py <arguments_if_any>
 - Placeholders for `engine_assembly.py` exist **and are not yet implemented**.
 - `door_assembly.py` is **partially implemented** and now showcases `arc_move` and `spiral_move`.
 - `engine_assembly.py` is **partially implemented** and now includes a `laser_weld` step.
-- `pcb_assembly.py` now includes a `laser_mark` step for serial number etching.
+- `pcb_assembly.py` now includes a `laser_mark` step for serial number etching and integration with `sim_database_manager.py` for logging recipes, results, and errors.
 - `improvements/compound_movements.py` now contains the implemented logic for `arc_move` and `spiral_move`, which are utilized by `SimpleGantrySimulation`.
 - `SimpleGantrySimulation`'s `GantryRobot` class now includes `laser_weld` and `laser_mark` methods.
+- `sim_database_manager.py` provides an in-memory database simulation with CRUD operations for recipes, results, errors, and KPIs.
 - VS Code tasks and launch configurations are set up for existing runnable parts.
-- **Unit tests** for `AnalyzeSerialData.py` and `SimpleGantrySimulation` (specifically the `GantryRobot` class, including laser functions) have been added in the `tests/` directory.
+- **Unit tests** for `AnalyzeSerialData.py`, `SimpleGantrySimulation` (specifically the `GantryRobot` class, including laser functions), and `sim_database_manager.py` have been added in the `tests/` directory.
 
 **Potential Roadmap / Future Enhancements:**
 - **GUI Development**: Implement a graphical user interface to visualize the simulation.
@@ -296,17 +313,127 @@ It's recommended to format and lint your code before committing changes. VS Code
 - `unittest` is the testing framework used for this project.
 - Test files are located in the `tests/` directory. Currently, this includes:
     - `tests/test_analyze_serial_data.py`: Contains unit tests for the `process_serial_data` function.
-    - `tests/test_gantry_robot.py`: Contains unit tests for the `GantryRobot` class from `SimpleGantrySimulation`, including its movement (e.g., `move_to`, `extend_retract`) and laser (`laser_weld`, `laser_mark`) functionalities.
+    - `tests/test_gantry_robot.py`: Contains unit tests for the `GantryRobot` class from `SimpleGantrySimulation`, including its movement and laser functionalities.
+    - `tests/test_sim_database_manager.py`: Contains unit tests for the CRUD operations of the in-memory database simulation module.
+    - `tests/test_file_logger.py`: Contains unit tests for the `file_logger.py` module, including its helper functions and log rotation mechanism.
+    - `tests/test_sim_opc_server.py`: Contains unit tests for the `SimOpcServer` class and its tag manipulation methods.
+    - `tests/test_kpi_calculator.py`: Contains unit tests for the KPI calculation functions.
+    - `tests/test_aws_logger_sim.py`: Contains unit tests for the AWS logging simulation module.
 - To run all tests, navigate to the project root directory in your terminal (where `tests/` is a subdirectory) and execute:
   ```bash
   python -m unittest discover tests
   ```
-  Alternatively, individual test files can be run directly:
+  Alternatively, individual test files can be run directly, for example:
   ```bash
   python tests/test_gantry_robot.py
+  python tests/test_sim_database_manager.py
+  python tests/test_file_logger.py
+  python tests/test_sim_opc_server.py
+  python tests/test_kpi_calculator.py
+  python tests/test_aws_logger_sim.py
   ```
 
 Test files should be created to ensure the reliability of the simulation logic, especially for robot movements, component interactions, and scenario execution.
+
+## Simulated Database Interactions
+
+This project includes an in-memory simulation of a database to store and manage data related to recipes, production results, errors, and Key Performance Indicators (KPIs). The core logic is implemented in `sim_database_manager.py`.
+
+The simulated database consists of the following "tables" (implemented as Python lists):
+
+-   **Recipes Table (`db_recipes`)**:
+    -   `recipe_id` (int, unique): Unique identifier for the recipe.
+    -   `name` (str): Name of the recipe.
+    -   `ingredients` (list): List of ingredients or component names.
+    -   `steps` (list): List of assembly or processing steps.
+    -   `created_at` (datetime): Timestamp of when the recipe was created.
+-   **Results Table (`db_results`)**:
+    -   `result_id` (int, unique): Unique identifier for the production result.
+    -   `timestamp` (datetime): Timestamp of when the result was recorded.
+    -   `recipe_id` (int): Foreign key linking to the Recipes table.
+    -   `output_quantity` (int): Number of units produced.
+    -   `status` (str): Outcome of the production run (e.g., "success", "failed_inspection", "aborted").
+    -   `operator` (str): Identifier for the operator or automated process.
+    -   `shift` (str): Production shift identifier.
+-   **Errors Table (`db_errors`)**:
+    -   `error_id` (int, unique): Unique identifier for the error log.
+    -   `timestamp` (datetime): Timestamp of when the error occurred.
+    -   `machine_id` (str): Identifier of the machine or robot that reported the error (e.g., "Robot.feeder", "GantryRobot1").
+    -   `error_code` (str): Specific code for the error type.
+    -   `description` (str): Human-readable description of the error.
+    -   `severity` (str): Severity level (e.g., "low", "medium", "high", "critical").
+-   **KPIs Table (`db_kpis`)**:
+    -   `kpi_id` (int, unique): Unique identifier for the KPI record.
+    -   `timestamp` (datetime): Timestamp for when the KPI was recorded.
+    -   `machine_id` (str): Identifier for the machine or process the KPI relates to.
+    -   `OEE` (float): Overall Equipment Effectiveness score.
+    -   `availability` (float): Machine availability percentage.
+    -   `performance` (float): Machine performance percentage.
+    -   `quality` (float): Quality rate percentage.
+    -   `cycle_time` (float): Average cycle time for a process or unit.
+    -   `defect_rate` (float): Rate of defects.
+
+The module provides CRUD (Create, Read, Update, Delete) functions for managing these records. For example, `create_recipe()`, `get_all_results()`, `create_error()`, etc. The `pcb_assembly.py` scenario demonstrates the usage of these functions for logging recipes, production results, and errors.
+
+Currently, this is an in-memory simulation, meaning data persists only for the duration of the script's execution.
+
+## Enhanced File Logging
+
+The simulation now includes enhanced file logging capabilities for better traceability, debugging, and data analysis, implemented in `file_logger.py`.
+
+-   **Structured JSON Logs**: Logs are generated in JSON format, with each entry on a new line. This facilitates easier parsing and analysis by other tools.
+-   **Log Location**: All log files are stored in the `logs/` directory, created automatically if it doesn't exist.
+-   **Dedicated Log Files for Different Event Types**:
+    -   `logs/error.log`: Captures detailed error events. Key fields include `timestamp`, `machine_id`, `error_code`, `description`, `severity`, and optional `scenario_context`.
+    -   `logs/production.log`: Records production results for each completed unit (e.g., PCB). Key fields include `timestamp`, `recipe_id`, `recipe_name`, `output_quantity`, `status`, `operator`, `shift`, and `cycle_time_seconds`.
+    -   `logs/kpi.log`: Stores snapshots of Key Performance Indicators. Key fields include `timestamp`, `machine_id`, `OEE`, `availability`, `performance`, `quality`, `cycle_time`, `defect_rate`, and optional `MTBF`, `MTTR`, `throughput`.
+-   **Timestamping**: All log entries are automatically timestamped with UTC time in ISO 8601 format (e.g., `YYYY-MM-DDTHH:MM:SS.ffffffZ`).
+-   **Log Rotation**:
+    -   A basic log rotation mechanism is implemented to manage log file sizes.
+    -   When a log file (e.g., `error.log`) exceeds a predefined maximum size (currently 1MB, defined by `MAX_LOG_SIZE_BYTES` in `file_logger.py`), it is backed up.
+    -   The current log is renamed (e.g., to `error.log.1`), and existing backups are shifted (e.g., `error.log.1` becomes `error.log.2`).
+    -   A maximum number of backup files (currently 5, defined by `MAX_LOG_BACKUPS`) is maintained; the oldest backup is removed if this limit is exceeded.
+
+This enhanced logging system provides a more robust and organized way to capture and manage simulation data over time.
+
+## Simulated OPC Communication
+
+The project includes a simulation of an OPC server to mimic data exchange between PLCs/machines and factory systems. This allows for testing control logic that would typically interact with an OPC UA or OPC DA server in a real-world industrial setting.
+
+-   **Module**: Implemented in `sim_opc_server.py`, which provides a `SimOpcServer` class.
+-   **Tag Structure**: The server manages OPC-like tags, where each tag has a `tag_id` (string), `value` (Python primitive), `timestamp` (datetime), and `quality` (string, e.g., 'Good').
+-   **Core Functionality**: A global instance `sim_opc_instance` is available for other modules to interact with. Key functions include `add_tag()`, `read_tag()`, and `write_tag()`.
+-   **Sample Tags**: The server initializes with sample tags representing sensor data (e.g., `SimPLC.S1.Temp`), robot states (e.g., `GantryRobot.Status`), and actuators (e.g., `Conveyor.IsRunning`).
+-   **Integration**: Demonstrated in `scenarios/pcb_assembly.py`, where the scenario logic reads sensor data (like item presence) and writes actuator commands (like conveyor control) via the simulated OPC server. Due to technical limitations encountered during development, direct OPC updates from the `GantryRobot` class in `SimpleGantrySimulation.py` (e.g., for its axis positions or detailed status changes) are not currently implemented as fully as initially planned; the scenario-level interactions showcase the OPC server's capabilities.
+
+## KPI Calculation & Storage
+
+The project now includes a module for calculating and storing key Key Performance Indicators (KPIs) related to the simulated manufacturing process.
+
+-   **Module**: Implemented in `kpi_calculator.py`.
+-   **KPIs Calculated**:
+    -   Overall Equipment Effectiveness (OEE)
+    -   Availability
+    -   Performance
+    -   Quality
+    -   Average Cycle Time
+    -   Defect Rate
+    -   Mean Time Between Failures (MTBF) - Uses a simplified model with severity-based repair times for downtime calculation.
+    -   Mean Time To Repair (MTTR) - Uses a simplified model with severity-based repair times.
+    -   Throughput (units per hour).
+-   **Data Sources**: KPI calculations utilize data logged via `sim_database_manager.py` (e.g., production results, error logs) and configurable operational parameters (e.g., ideal cycle times, scheduled times) defined within `kpi_calculator.py` or passed to its functions.
+-   **Storage**: Calculated KPIs are stored using `sim_database_manager.create_kpi_record()` and can also be logged to `logs/kpi.log` via `file_logger.py`.
+-   **Integration**: Demonstrated in `scenarios/pcb_assembly.py`, where KPIs are calculated at the end of the simulation run based on data collected during the scenario.
+
+## Simulated AWS Logging
+
+The project includes a module to simulate logging to an AWS CloudWatch-like service. This allows for testing and development of structured cloud logging patterns without actual AWS integration.
+
+-   **Module**: Implemented in `aws_logger_sim.py`.
+-   **Log Format**: Log entries are structured in JSON, including `timestamp` (ISO 8601 UTC), `log_level` (e.g., INFO, ERROR), `category` (for filtering, e.g., RobotOperation, SystemEvent), `message`, and an optional `details` dictionary for context-specific data.
+-   **Simulated Transmission**: Logs are written to `logs/aws_sim_cloudwatch.log`, with each JSON entry on a new line. This simulates how logs might be prepared for transmission to a cloud service.
+-   **Integration & Categories**: The logger is integrated into various parts of the application (scenarios, database manager, file logger meta-logging, KPI updates) using defined categories for easy filtering and analysis.
+-   **Note on Current Implementation**: This is a simulation; no actual calls to AWS services are made.
 
 ## Contributing
 

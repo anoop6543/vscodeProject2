@@ -9,6 +9,9 @@ from datetime import datetime
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from SimpleGantrySimulation import GantryRobot, ObjectType, Motor, Sensor
+import sim_database_manager as dbm # Use an alias for convenience
+import file_logger # For structured file logging
+from sim_opc_server import sim_opc_instance # OPC server instance
 
 # Configure logging
 logging.basicConfig(
@@ -85,12 +88,17 @@ class PCBAssemblyLine:
         # Quality metrics
         self.placement_accuracy = []
         self.cycle_times = []
+        self.inspection_results_summary = [] # For tracking pass/fail of components on current PCB
+        self.pcb_recipe_id = None # To store the ID of the created recipe
     
     def move_conveyor(self, distance: float):
         """Simulate conveyor movement"""
         self.main_logger.info(f"Moving conveyor by {distance}mm")
+        sim_opc_instance.write_tag("Conveyor.IsRunning", True)
         self.conveyor_position += distance
         time.sleep(abs(distance) / 100)  # Simulate time to move conveyor
+        sim_opc_instance.write_tag("Conveyor.IsRunning", False)
+        self.main_logger.info(f"Conveyor movement finished. OPC tag Conveyor.IsRunning updated.")
         
     def get_component_by_name(self, name: str) -> Component:
         """Find a component by name"""
@@ -141,6 +149,14 @@ class PCBAssemblyLine:
             
         except Exception as e:
             logger.error(f"Error picking component: {e}")
+            # Log error to file_logger
+            file_logger.log_error(
+                machine_id=f"Robot.{robot_name}",
+                error_code="PICK_EXCEPTION_002",
+                description=f"Exception during pick of {component_name}: {str(e)}",
+                severity="high",
+                scenario_context=f"Component: {component_name}" # pcb_index not available here
+            )
             return False
     
     def place_component(self, robot_name: str, component_name: str, 
@@ -194,6 +210,14 @@ class PCBAssemblyLine:
             
         except Exception as e:
             logger.error(f"Error placing component: {e}")
+            # Log error to file_logger
+            file_logger.log_error(
+                machine_id=f"Robot.{robot_name}",
+                error_code="PLACE_EXCEPTION_003",
+                description=f"Exception during place of {component_name}: {str(e)}",
+                severity="high",
+                scenario_context=f"Component: {component_name}" # pcb_index not available here
+            )
             return False
     
     def inspect_component(self, robot_name: str, component_name: str, 
@@ -235,10 +259,25 @@ class PCBAssemblyLine:
     def run_assembly(self, pcb_count: int = 1):
         """Run the assembly process for multiple PCBs"""
         self.main_logger.info(f"Starting assembly of {pcb_count} PCBs")
-        
+
+        # --- Example: Create a sample recipe for the PCB being assembled ---
+        # (This is a simplified example; in a real system, recipes would be pre-loaded or selected)
+        self.pcb_recipe_id = dbm.create_recipe(
+            name=f"Standard PCB Assembly - {datetime.now().strftime('%Y%m%d_%H%M')}", # Ensure unique name for demo
+            ingredients=[comp.name for comp in self.components[:5]], # Sample ingredients: first 5 components
+            steps=[f"Place {spec[0]} at ({spec[1]},{spec[2]})" for spec in self.pcb_spec] # Sample steps from spec
+        )
+        self.main_logger.info(f"Created/loaded Recipe ID {self.pcb_recipe_id} for current PCB type.")
+        retrieved_recipe = dbm.get_recipe(self.pcb_recipe_id)
+        if retrieved_recipe: # Check if recipe was found
+            self.main_logger.info(f"Recipe details: {retrieved_recipe['name']}, {len(retrieved_recipe['ingredients'])} ingredients, {len(retrieved_recipe['steps'])} steps.")
+        else:
+            self.main_logger.error(f"Could not retrieve recipe ID {self.pcb_recipe_id} after creation.")
+
         for pcb_index in range(pcb_count):
             pcb_start_time = datetime.now()
             self.main_logger.info(f"Assembly of PCB {pcb_index+1}/{pcb_count} started")
+            self.inspection_results_summary = [] # Reset for current PCB
             
             # Load new PCB
             self.move_conveyor(300)
@@ -249,10 +288,37 @@ class PCBAssemblyLine:
                 
                 component_start_time = datetime.now()
                 
+                
                 # 1. Pick component with feeder robot
-                pick_success = self.pick_component("feeder", comp_name)
+                # OPC: Simulate reading a sensor for item presence before picking
+                item_present_tag_id = f"SimPLC.Feeder.{comp_name}.ItemPresent"
+                if not sim_opc_instance.read_tag(item_present_tag_id):
+                    sim_opc_instance.add_tag(item_present_tag_id, True) # Assume item is present for demo
+                    self.main_logger.info(f"OPC: Added and set dummy tag {item_present_tag_id} to True for demo.")
+
+                item_present_opc_data = sim_opc_instance.read_tag(item_present_tag_id)
+                item_is_present = item_present_opc_data['value'] if item_present_opc_data else False
+                
+                self.main_logger.info(f"OPC Check: {item_present_tag_id} = {item_is_present}")
+
+                pick_success = False # Initialize before conditional pick
+                if item_is_present:
+                    pick_success = self.pick_component("feeder", comp_name)
+                else:
+                    self.main_logger.warning(f"OPC: Item {comp_name} not present in feeder. Skipping pick.")
+                
                 if not pick_success:
-                    self.main_logger.error(f"Failed to pick {comp_name}, skipping")
+                    self.main_logger.error(f"Failed to pick {comp_name} (Item present: {item_is_present}), skipping")
+                    # --- Log error using file_logger ---
+                    file_logger.log_error(
+                        machine_id="Robot.feeder", # Specific robot causing the error
+                        error_code="PICK_FAIL_PCB_001",
+                        description=f"Failed to pick component: {comp_name}",
+                        severity="medium",
+                        scenario_context=f"PCB_Index_{pcb_index}_Component_{comp_name}"
+                    )
+                    # self.main_logger.info(f"Error logged for pick failure of {comp_name}.") # Keep if desired
+                    self.inspection_results_summary.append(False) # Log failure for this component
                     continue
                 
                 # 2. Transfer to placer robot (simulated)
@@ -264,6 +330,15 @@ class PCBAssemblyLine:
                 place_success = self.place_component("placer", comp_name, pcb_position, rotation)
                 if not place_success:
                     self.main_logger.error(f"Failed to place {comp_name}, skipping inspection")
+                    # --- Log error using file_logger ---
+                    file_logger.log_error(
+                        machine_id="Robot.placer", # Specific robot causing the error
+                        error_code="PLACE_FAIL_PCB_001",
+                        description=f"Failed to place component: {comp_name}",
+                        severity="medium",
+                        scenario_context=f"PCB_Index_{pcb_index}_Component_{comp_name}"
+                    )
+                    self.inspection_results_summary.append(False) # Log failure for this component
                     continue
                 
                 # 4. Inspect component with inspector robot
@@ -275,19 +350,134 @@ class PCBAssemblyLine:
                 self.cycle_times.append(cycle_time)
                 self.main_logger.info(f"Component cycle time: {cycle_time:.2f} seconds")
                 
+                # Record cycle time for this component
+                component_end_time = datetime.now()
+                cycle_time = (component_end_time - component_start_time).total_seconds()
+                self.cycle_times.append(cycle_time)
+                self.main_logger.info(f"Component cycle time: {cycle_time:.2f} seconds")
+                
+                self.inspection_results_summary.append(inspection_success) # Track result for this component
+
                 # Rework if needed
                 if not inspection_success:
                     self.main_logger.warning(f"Rework needed for {comp_name}")
                     # Simulate rework process
-                    self.pick_component("placer", comp_name)
-                    time.sleep(1.0)  # Simulate rework time
-                    self.place_component("placer", comp_name, pcb_position, rotation)
-                    reinspection = self.inspect_component("inspector", comp_name, pcb_position)
-                    self.main_logger.info(f"Rework result: {'SUCCESS' if reinspection else 'FAILURE'}")
+                    # For rework, let's log another potential error if rework pick fails
+                    rework_pick_success = self.pick_component("placer", comp_name) 
+                    if not rework_pick_success:
+                        dbm.create_error(
+                            machine_id="Robot.placer",
+                            error_code="REWORK_PICK_FAIL_002",
+                            description=f"Failed to pick {comp_name} for rework.",
+                            severity="high"
+                        )
+                        self.main_logger.error(f"Error logged for rework pick failure of {comp_name}.")
+                        # If rework pick fails, the component remains failed for this PCB
+                    else:
+                        time.sleep(1.0)  # Simulate rework time
+                        self.place_component("placer", comp_name, pcb_position, rotation)
+                        reinspection = self.inspect_component("inspector", comp_name, pcb_position)
+                        self.main_logger.info(f"Rework result: {'SUCCESS' if reinspection else 'FAILURE'}")
+                        # Update the summary for this component based on reinspection if needed,
+                        # for simplicity, we'll assume the initial failure still marks the PCB as potentially flawed.
+                        # Or, if rework makes it good, find the last False and update it.
+                        # For now, the initial failure is recorded. A more complex system would handle this.
 
-            # After loop, before moving PCB out:
-            self.main_logger.info(f"All components processed for PCB {pcb_index+1}. Proceeding to laser marking.")
+
+            # After component loop, before moving PCB out:
+            self.main_logger.info(f"All components processed for PCB {pcb_index+1}. Proceeding to final checks, laser marking, and result logging.")
+
+            # --- Simulate a final PCB-level critical fault detection ---
+            # This is a conceptual example. In a real scenario, this might be based on multiple failed inspections.
+            # For demonstration, let's assume 1 out of 5 PCBs has a critical fault found by the inspection station.
             
+            # Ensure pcb_index is available from the main loop: for pcb_index in range(pcb_count):
+            # The prompt uses (pcb_index + 1) % 5 == 0. Let's use pcb_index % 4 == 0 for variety (0, 4, 8...)
+            # to ensure it triggers on the first PCB if pcb_count is 1 and also for the 5th if pcb_count is 5.
+            # Let's stick to the prompt's (pcb_index + 1) % 5 == 0 for consistency.
+            if (pcb_index + 1) % 5 == 0: 
+                critical_fault_description = f"Critical fault detected on PCB {pcb_index + 1} (e.g., board crack)."
+                faulting_station_id = "InspectionStation_01" # Example station ID
+                error_code_critical = "INSP_CRITICAL_001"
+
+                self.main_logger.warning(f"OPC_DB_LINK: {critical_fault_description} at {faulting_station_id}")
+
+                # 1. Update OPC Tag to reflect the fault status
+                opc_station_status_tag = f"PCBLine.{faulting_station_id}.Status"
+                sim_opc_instance.write_tag(opc_station_status_tag, "CriticalFault")
+                self.main_logger.info(f"OPC_DB_LINK: Updated OPC tag {opc_station_status_tag} to CriticalFault.")
+
+                # 2. Log this critical fault to file_logger
+                file_logger.log_error(
+                    machine_id=faulting_station_id,
+                    error_code=error_code_critical,
+                    description=critical_fault_description,
+                    severity="critical",
+                    scenario_context=f"PCB_Index_{pcb_index}"
+                )
+                self.main_logger.info(f"OPC_DB_LINK: Critical fault logged to error.log.")
+
+                # 3. Log this critical fault to the database manager
+                dbm.create_error(
+                    machine_id=faulting_station_id,
+                    error_code=error_code_critical,
+                    description=critical_fault_description,
+                    severity="critical"
+                )
+                self.main_logger.info(f"OPC_DB_LINK: Critical fault logged to sim_database_manager.")
+                
+                # Note: As per prompt, this fault does not currently override overall_pcb_status for the result log.
+                # In a real system, overall_pcb_status would likely be set to "critical_failure" here.
+            
+            # --- Example: Log production result ---
+            # Determine status based on inspection or other factors
+            overall_pcb_status = "success" if all(self.inspection_results_summary) else "failed_inspection"
+            
+            # Calculate cycle time for the PCB
+            current_pcb_cycle_time = (datetime.now() - pcb_start_time).total_seconds()
+
+            recipe_name_for_log = "Unknown Recipe"
+            if self.pcb_recipe_id is not None:
+                recipe_details = dbm.get_recipe(self.pcb_recipe_id)
+                if recipe_details:
+                    recipe_name_for_log = recipe_details['name']
+                
+                # Log to sim_database_manager
+                dbm.create_result(
+                    recipe_id=self.pcb_recipe_id,
+                    output_quantity=1, 
+                    status=overall_pcb_status,
+                    operator="OperatorPCB1", 
+                    shift="DayShift"
+                )
+                self.main_logger.info(f"Production result logged to DB Manager for PCB {pcb_index+1} with status: {overall_pcb_status}.")
+
+                # Log to file_logger
+                file_logger.log_production_result(
+                    recipe_id=self.pcb_recipe_id,
+                    recipe_name=recipe_name_for_log,
+                    output_quantity=1,
+                    status=overall_pcb_status,
+                    operator="OperatorPCB_Line1",
+                    shift="CurrentShift", # Example, could be dynamic
+                    cycle_time_seconds=current_pcb_cycle_time
+                )
+                self.main_logger.info(f"Production result logged to file_logger for PCB {pcb_index+1}.")
+            else:
+                self.main_logger.error("No valid pcb_recipe_id to log result against for DB Manager.")
+                # Log a generic production result if recipe ID is missing for file logger
+                file_logger.log_production_result(
+                    recipe_id=0, # Placeholder
+                    recipe_name="Unknown Recipe",
+                    output_quantity=1,
+                    status=overall_pcb_status,
+                    operator="OperatorPCB_Line1",
+                    shift="CurrentShift",
+                    cycle_time_seconds=current_pcb_cycle_time
+                )
+                self.main_logger.info(f"Generic production result logged to file_logger for PCB {pcb_index+1}.")
+
+
             # Assume marking is done by the 'inspector' robot
             inspector_robot = self.robots["inspector"]
             
@@ -316,12 +506,64 @@ class PCBAssemblyLine:
             self.move_conveyor(300)
             
             # Calculate PCB assembly time
-            pcb_end_time = datetime.now()
-            pcb_time = (pcb_end_time - pcb_start_time).total_seconds()
-            self.main_logger.info(f"PCB {pcb_index+1} completed in {pcb_time:.2f} seconds")
-        
+            # pcb_end_time = datetime.now() # This is already captured by current_pcb_cycle_time calculation
+            # pcb_time = (pcb_end_time - pcb_start_time).total_seconds() # Already calculated
+            self.main_logger.info(f"PCB {pcb_index+1} completed in {current_pcb_cycle_time:.2f} seconds")
+
+            # --- Example: Update System.Heartbeat OPC tag ---
+            hb_tag = sim_opc_instance.read_tag("System.Heartbeat")
+            if hb_tag:
+                new_hb_value = hb_tag['value'] + 1
+                sim_opc_instance.write_tag("System.Heartbeat", new_hb_value)
+                self.main_logger.info(f"OPC: System.Heartbeat incremented to {new_hb_value}.")
+            else: # Should not happen as it's initialized
+                sim_opc_instance.add_tag("System.Heartbeat", 1)
+                self.main_logger.info(f"OPC: System.Heartbeat initialized to 1.")
+
+
+            # --- Example: Log KPIs for the placer robot for this PCB ---
+            # These are dummy KPI values for demonstration.
+            simulated_oee = random.uniform(0.7, 0.9)
+            simulated_availability = random.uniform(0.8, 0.95)
+            simulated_performance = random.uniform(0.85, 0.98)
+            # Quality based on inspection summary for this PCB
+            successful_components = sum(1 for success_status in self.inspection_results_summary if success_status)
+            total_components_processed = len(self.inspection_results_summary)
+            simulated_quality = successful_components / total_components_processed if total_components_processed > 0 else 0.0
+            
+            avg_component_cycle_time_for_pcb = sum(self.cycle_times[-total_components_processed:]) / total_components_processed if total_components_processed > 0 else 15.0 # Placeholder
+            simulated_defect_rate = 1.0 - simulated_quality
+
+            file_logger.log_kpi(
+                machine_id="Robot.placer", 
+                oee=round(simulated_oee, 3),
+                availability=round(simulated_availability, 3),
+                performance=round(simulated_performance, 3),
+                quality=round(simulated_quality, 3),
+                cycle_time=round(avg_component_cycle_time_for_pcb, 2),
+                defect_rate=round(simulated_defect_rate, 3),
+                throughput=float(total_components_processed) # Example throughput: components per PCB processing time
+            )
+            self.robot_loggers["placer"].info(f"KPIs logged via file_logger for placer robot after PCB {pcb_index+1}.")
+
         # Print final statistics
         self.report_statistics()
+
+        self.main_logger.info("\n--- Retrieving sample data from DB Manager ---")
+        all_recipes_final = dbm.get_all_recipes()
+        self.main_logger.info(f"Total recipes in DB: {len(all_recipes_final)}")
+        if all_recipes_final:
+            self.main_logger.info(f"Last recipe added: {all_recipes_final[-1]['name']}")
+
+        all_results_final = dbm.get_all_results()
+        self.main_logger.info(f"Total results in DB: {len(all_results_final)}")
+        if all_results_final:
+            self.main_logger.info(f"Last result status: {all_results_final[-1]['status']}")
+
+        all_errors_final = dbm.get_all_errors()
+        self.main_logger.info(f"Total errors in DB: {len(all_errors_final)}")
+        if all_errors_final:
+            self.main_logger.info(f"Last error description: {all_errors_final[-1]['description']}")
     
     def report_statistics(self):
         """Report assembly statistics"""
@@ -341,4 +583,4 @@ class PCBAssemblyLine:
 
 if __name__ == "__main__":
     assembly_line = PCBAssemblyLine()
-    assembly_line.run_assembly(pcb_count=3)  # Assemble 3 PCBs
+    assembly_line.run_assembly(pcb_count=5)  # Assemble 5 PCBs to test the critical fault simulation
