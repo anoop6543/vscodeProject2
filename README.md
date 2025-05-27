@@ -57,6 +57,7 @@ To create a comprehensive simulation environment that enables:
 - **Simulated OPC Communication**: Mimics an OPC server for tag-based data exchange, with example integration in scenarios. *(Implemented in `sim_opc_server.py`)*
 - **KPI Calculation & Storage**: Calculates and stores key manufacturing KPIs like OEE, availability, performance, etc., based on simulated data. *(Implemented in `kpi_calculator.py`)*
 - **Simulated AWS Logging**: Generates structured JSON logs mimicking cloud logging services, with categorization and integration for various application events. *(Implemented in `aws_logger_sim.py`)*
+- **UI Interaction Layer Support**: Provides an API-like service (`ui_interaction_service.py`) to expose simulation data (status, OPC tags, logs, database summaries) for potential UI visualization and limited control. *(Full implementation of control features is conceptual)*
 **Many of these features are still under development or are planned for future iterations, though core robot movements and tooling capabilities are becoming more robust.**
 
 ## Project Structure
@@ -73,6 +74,7 @@ vscodeProject2/
 ├── sim_opc_server.py           # Simulates a basic OPC server with tag storage and read/write capabilities.
 ├── kpi_calculator.py           # Contains functions to calculate various manufacturing KPIs.
 ├── aws_logger_sim.py           # Simulates sending structured JSON logs to an AWS CloudWatch-like file (`logs/aws_sim_cloudwatch.log`).
+├── ui_interaction_service.py   # Provides functions to expose simulation data and limited control for a potential UI layer.
 ├── vscodeProject2.code-workspace # VS Code workspace file
 ├── improvements/               # Folder for planned or in-progress enhancements
 │   └── compound_movements.py   # Defines logic for advanced robot movements like arc and spiral.
@@ -89,7 +91,8 @@ vscodeProject2/
     ├── test_file_logger.py     # Unit tests for the enhanced file logging module.
     ├── test_sim_opc_server.py  # Unit tests for the OPC server simulation.
     ├── test_kpi_calculator.py  # Unit tests for KPI calculation logic.
-    └── test_aws_logger_sim.py  # Unit tests for the AWS logging simulation module.
+    ├── test_aws_logger_sim.py  # Unit tests for the AWS logging simulation module.
+    └── test_ui_interaction_service.py # Unit tests for the UI interaction service module.
 ```
 
 ## Key Scenarios
@@ -319,6 +322,7 @@ It's recommended to format and lint your code before committing changes. VS Code
     - `tests/test_sim_opc_server.py`: Contains unit tests for the `SimOpcServer` class and its tag manipulation methods.
     - `tests/test_kpi_calculator.py`: Contains unit tests for the KPI calculation functions.
     - `tests/test_aws_logger_sim.py`: Contains unit tests for the AWS logging simulation module.
+    - `tests/test_ui_interaction_service.py`: Contains unit tests for the UI interaction service module.
 - To run all tests, navigate to the project root directory in your terminal (where `tests/` is a subdirectory) and execute:
   ```bash
   python -m unittest discover tests
@@ -331,6 +335,7 @@ It's recommended to format and lint your code before committing changes. VS Code
   python tests/test_sim_opc_server.py
   python tests/test_kpi_calculator.py
   python tests/test_aws_logger_sim.py
+  python tests/test_ui_interaction_service.py
   ```
 
 Test files should be created to ensure the reliability of the simulation logic, especially for robot movements, component interactions, and scenario execution.
@@ -434,6 +439,23 @@ The project includes a module to simulate logging to an AWS CloudWatch-like serv
 -   **Simulated Transmission**: Logs are written to `logs/aws_sim_cloudwatch.log`, with each JSON entry on a new line. This simulates how logs might be prepared for transmission to a cloud service.
 -   **Integration & Categories**: The logger is integrated into various parts of the application (scenarios, database manager, file logger meta-logging, KPI updates) using defined categories for easy filtering and analysis.
 -   **Note on Current Implementation**: This is a simulation; no actual calls to AWS services are made.
+
+## UI Interaction Layer Support
+
+To facilitate the development of a separate User Interface (UI) for visualizing and interacting with the simulation, a dedicated service layer (`ui_interaction_service.py`) has been implemented.
+
+-   **Module**: Implemented in `ui_interaction_service.py`.
+-   **Key Capabilities**:
+    -   **Data Exposure**: Provides functions to fetch various simulation data points, including:
+        -   Overall simulation status and current scenario details.
+        -   Robot status and positions (primarily via OPC tag polling).
+        -   Snapshots of current OPC tag values.
+        -   Recent entries from various log files (error, production, KPI, AWS simulation).
+        -   Summaries and full data for recipes, production results, errors, and KPIs from the `sim_database_manager`.
+    -   **Data Formatting**: Data is structured in Python dictionaries, suitable for easy JSON serialization for UI consumption.
+    -   **Conceptual Control**: Includes a function `set_opc_tag_value()` to allow external modification of OPC tags. Other control functions (start/stop/pause scenario) are designed as placeholders to indicate future API extension points but are not currently implemented due to the simulation's synchronous architecture.
+-   **Usage**: A UI's backend component could import and use the functions from `ui_interaction_service.py` to query the simulation's state and history for display.
+-   **Limitations**: Direct real-time, event-driven push updates from the simulation to a UI are not part of this layer; a UI would typically poll these service functions. Deep robot state introspection is limited by reliance on OPC tags set by scenarios rather than direct GantryRobot class modification.
 
 ## Contributing
 
