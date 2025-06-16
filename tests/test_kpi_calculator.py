@@ -164,14 +164,192 @@ class TestKpiCalculator(unittest.TestCase):
     # --- Test calculate_oee ---
     def test_calculate_oee(self):
         self.assertAlmostEqual(kpic.calculate_oee(0.9, 0.95, 0.99), 0.9 * 0.95 * 0.99)
-        self.assertAlmostEqual(kpic.calculate_oee(0.0, 0.95, 0.99), 0.0)
-
-    # --- Test calculate_throughput ---
+        self.assertAlmostEqual(kpic.calculate_oee(0.0, 0.95, 0.99), 0.0)    # --- Test calculate_throughput ---
     def test_calculate_throughput_valid(self):
         self.assertAlmostEqual(kpic.calculate_throughput(100, 3600), 100/3600.0)
-
+        
     def test_calculate_throughput_zero_time(self):
         self.assertAlmostEqual(kpic.calculate_throughput(100, 0), 0.0)
+
+    # --- Test calculate_teep ---
+    def test_calculate_teep_valid(self):
+        self.assertAlmostEqual(kpic.calculate_teep(0.8, 0.5), 0.4)  # 80% OEE, 50% loading = 40% TEEP
+        
+    def test_calculate_teep_zero_loading(self):
+        self.assertAlmostEqual(kpic.calculate_teep(0.8, 0), 0.0)
+        
+    def test_calculate_teep_invalid_loading(self):
+        self.assertAlmostEqual(kpic.calculate_teep(0.8, 1.2), 0.0)  # Loading > 1.0 is invalid
+        
+    # --- Test calculate_first_pass_yield ---
+    def test_calculate_first_pass_yield_valid(self):
+        self.assertAlmostEqual(kpic.calculate_first_pass_yield(100, 20), 0.8)  # 80 out of 100 passed first time
+        
+    def test_calculate_first_pass_yield_perfect(self):
+        self.assertAlmostEqual(kpic.calculate_first_pass_yield(100, 0), 1.0)  # All passed first time
+        
+    def test_calculate_first_pass_yield_all_rework(self):
+        self.assertAlmostEqual(kpic.calculate_first_pass_yield(100, 100), 0.0)  # None passed first time
+        
+    def test_calculate_first_pass_yield_zero_units(self):
+        self.assertAlmostEqual(kpic.calculate_first_pass_yield(0, 0), 0.0)
+        
+    def test_calculate_first_pass_yield_more_rework_than_total(self):
+        # This is an edge case - more rework than total shouldn't happen in reality
+        self.assertAlmostEqual(kpic.calculate_first_pass_yield(10, 15), 0.0)
+        
+    # --- Test calculate_equipment_utilization ---
+    def test_calculate_equipment_utilization_valid(self):
+        result = kpic.calculate_equipment_utilization(4 * 3600, 8 * 3600, "shift")  # 4 hours actual run time in 8 hour shift
+        self.assertEqual(float(result["utilization_rate"]), 0.5)
+        self.assertEqual(float(result["idle_time_seconds"]), 4 * 3600)
+        self.assertEqual(float(result["idle_percentage"]), 0.5)
+        self.assertEqual(result["time_period"], "shift")
+        
+    def test_calculate_equipment_utilization_full(self):
+        result = kpic.calculate_equipment_utilization(8 * 3600, 8 * 3600)
+        self.assertEqual(float(result["utilization_rate"]), 1.0)
+        self.assertEqual(float(result["idle_percentage"]), 0.0)
+        
+    def test_calculate_equipment_utilization_zero_available(self):
+        result = kpic.calculate_equipment_utilization(3600, 0)
+        self.assertEqual(float(result["utilization_rate"]), 0.0)
+        
+    def test_calculate_equipment_utilization_exceed_available(self):
+        # Run time exceeding available time should be capped at available time
+        result = kpic.calculate_equipment_utilization(10 * 3600, 8 * 3600)
+        self.assertEqual(float(result["utilization_rate"]), 1.0)
+        
+    # --- Test calculate_ore ---
+    def test_calculate_ore_valid(self):
+        result = kpic.calculate_ore(0.9, 0.85, 0.95, 0.8, 0.75)
+        expected_oee = 0.9 * 0.85 * 0.95
+        expected_ore = expected_oee * 0.8 * 0.75
+        self.assertAlmostEqual(result["oee"], expected_oee)
+        self.assertAlmostEqual(result["overall_resource_effectiveness"], expected_ore)
+        
+    def test_calculate_ore_invalid_input(self):
+        with self.assertRaises(ValueError):
+            kpic.calculate_ore(0.9, 0.85, 0.95, 1.2, 0.75)  # Material efficiency > 1.0
+            
+    # --- Test analyze_production_losses ---
+    def test_analyze_production_losses_valid(self):
+        losses = {
+            "breakdown": 600.0,
+            "setup": 300.0,
+            "small_stops": 120.0,
+            "reduced_speed": 180.0
+        }
+        result = kpic.analyze_production_losses(3600, losses, 10.0, 100, 5)
+        self.assertAlmostEqual(result["total_loss_time"], 1200 + 50)  # 1200 from losses dict + 50 from defective units
+        
+    def test_analyze_production_losses_zero_scheduled(self):
+        losses = {"breakdown": 600.0}
+        result = kpic.analyze_production_losses(0, losses)
+        self.assertEqual(result["error"], "Scheduled time must be greater than zero")
+        
+    # --- Test analyze_six_big_losses ---
+    def test_analyze_six_big_losses_valid(self):
+        losses = {
+            "breakdown": 600.0,
+            "setup": 300.0,
+            "small_stops": 120.0,
+            "reduced_speed": 180.0
+        }
+        defect_breakdown = {"startup_rejects": 2, "production_rejects": 3}
+        result = kpic.analyze_six_big_losses(losses, 3600, 10.0, 100, defect_breakdown)
+        
+        # Check that breakdowns were mapped correctly
+        self.assertAlmostEqual(result["six_big_losses"]["breakdowns"], 600)
+        
+        # Check that setup was mapped correctly
+        self.assertAlmostEqual(result["six_big_losses"]["setup_and_adjustments"], 300)
+        
+        # Check defective units conversions
+        self.assertAlmostEqual(result["six_big_losses"]["startup_rejects"], 2 * 10.0)
+        self.assertAlmostEqual(result["six_big_losses"]["production_rejects"], 3 * 10.0)
+        
+    def test_analyze_six_big_losses_zero_scheduled(self):
+        result = kpic.analyze_six_big_losses({}, 0, 10.0, 0)
+        self.assertEqual(result["error"], "Scheduled time must be greater than zero")
+        
+    # --- Test calculate_time_based_kpis ---
+    def test_calculate_time_based_kpis_valid(self):
+        # Create sample data for two time periods
+        time_periods = [
+            (dt_class(2023, 1, 1, 8, 0), dt_class(2023, 1, 1, 16, 0)),
+            (dt_class(2023, 1, 2, 8, 0), dt_class(2023, 1, 2, 16, 0))
+        ]
+        
+        results_period1 = [{"status": "success", "cycle_time_seconds": 10.0, "reworked": False}] * 8
+        results_period2 = [{"status": "success", "cycle_time_seconds": 9.0, "reworked": False}] * 10
+        
+        errors_period1 = [{"severity": "medium"}] * 2
+        errors_period2 = [{"severity": "low"}] * 1
+        
+        results_by_period = [results_period1, results_period2]
+        errors_by_period = [errors_period1, errors_period2]
+        scheduled_times = [8 * 3600, 8 * 3600]
+        
+        result = kpic.calculate_time_based_kpis(
+            time_periods, 
+            results_by_period, 
+            errors_by_period, 
+            scheduled_times
+        )
+        
+        # Check that we got back the expected number of periods
+        self.assertEqual(len(result["period_labels"]), 2)
+        self.assertEqual(len(result["oee"]), 2)
+        
+    def test_calculate_time_based_kpis_mismatched_lengths(self):
+        with self.assertRaises(ValueError):
+            kpic.calculate_time_based_kpis(
+                [(dt_class(2023, 1, 1, 8, 0), dt_class(2023, 1, 1, 16, 0))],
+                [[]],
+                [[]],
+                [8 * 3600, 8 * 3600]  # Mismatched length
+            )
+            
+    # --- Test database integration functions ---
+    def test_store_kpi_results_to_database(self):
+        # This test depends on the sim_database_manager module
+        # We'll do a basic test that the function doesn't raise exceptions
+        try:
+            kpi_id = kpic.store_kpi_results_to_database(
+                machine_id="test_machine",
+                availability_rate=0.9,
+                performance_rate=0.85,
+                quality_rate=0.95,
+                oee=0.9 * 0.85 * 0.95,
+                cycle_time_seconds=10.5,
+                defect_rate=0.05
+            )
+            self.assertIsNotNone(kpi_id)
+        except Exception as e:
+            self.fail(f"store_kpi_results_to_database raised exception: {e}")
+            
+    def test_get_historical_kpi_data(self):
+        # This test depends on the sim_database_manager module
+        # We'll do a basic test that the function doesn't raise exceptions
+        try:
+            # First store some data
+            kpic.store_kpi_results_to_database(
+                machine_id="test_machine_history",
+                availability_rate=0.9,
+                performance_rate=0.85,
+                quality_rate=0.95,
+                oee=0.9 * 0.85 * 0.95
+            )
+            
+            # Now retrieve it
+            data = kpic.get_historical_kpi_data("test_machine_history")
+            self.assertIsInstance(data, list)
+            
+            # At least one record should be returned
+            self.assertGreaterEqual(len(data), 1)
+        except Exception as e:
+            self.fail(f"get_historical_kpi_data raised exception: {e}")
 
 if __name__ == '__main__':
     unittest.main()
