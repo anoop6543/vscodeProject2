@@ -258,11 +258,21 @@ class GantryRobot:
         self.extend_retract(False)
         sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Explicitly set to Idle after all pick_and_place ops
 
+# Example usage
+if __name__ == "__main__":
+    gantry = GantryRobot()
+    # Simulate picking a metal part and placing it elsewhere
+    gantry.pick_and_place(
+        ObjectType.METAL_PART,
+        pick_pos=(100, 200, 50),
+        place_pos=(400, 100, 50)
+    )
+
     def spiral_move(self, center_xy: Tuple[float, float], 
                     start_radius: float, end_radius: float, 
                     total_angle_rad: float, 
                     z_start: float, z_increment_per_rad: float, 
-                    speed: float):
+                    speed: float): # speed is not directly used in step calculation, but good to have for move_to
         """
         Move in a spiral pattern.
         center_xy: (xc, yc) for the spiral center.
@@ -288,185 +298,6 @@ class GantryRobot:
             self.move_to((x, y, z_start), current_orientation)
             print("Spiral movement finished (total angle was zero).")
             return
-
-        angular_step_magnitude = math.radians(10) # Fixed angular step for simplicity (e.g., 10 degrees)
-        direction = 1 if total_angle_rad > 0 else -1
-        
-        num_steps = int(abs(total_angle_rad) / angular_step_magnitude)
-        
-        if num_steps == 0: # If total_angle_rad is very small, ensure at least one step to the final point
-            print("Total angle is small, resulting in zero steps. Moving directly to the final spiral point.")
-            # Calculate final point directly
-            final_x = xc + end_radius * math.cos(total_angle_rad)
-            final_y = yc + end_radius * math.sin(total_angle_rad)
-            final_z = z_start + total_angle_rad * z_increment_per_rad
-            self.move_to((final_x, final_y, final_z), current_orientation)
-            print("Spiral movement finished.")
-            return
-
-        print(f"Spiral Details: Center: {center_xy}, StartR: {start_radius}, EndR: {end_radius}")
-        print(f"Total Angle: {math.degrees(total_angle_rad):.2f} deg, Z Start: {z_start}, Z Incr/Rad: {z_increment_per_rad}")
-        print(f"Num steps: {num_steps}, Angular Step: {math.degrees(angular_step_magnitude * direction):.2f} deg")
-
-        current_angle = 0.0
-        
-        # Radius change per absolute radian, to handle total_angle_rad being negative
-        # This ensures radius always interpolates from start_radius to end_radius over |total_angle_rad|
-        radius_increment_per_abs_rad = (end_radius - start_radius) / abs(total_angle_rad)
-
-        for i in range(num_steps + 1): # num_steps + 1 to include the end point of this step-wise calculation
-            # For step i, the angle is i * (angular_step * direction)
-            actual_current_angle = i * (angular_step_magnitude * direction)
-            
-            # Ensure actual_current_angle does not exceed total_angle_rad in magnitude
-            if abs(actual_current_angle) > abs(total_angle_rad):
-                actual_current_angle = total_angle_rad
-
-            current_radius = start_radius + (abs(actual_current_angle) / abs(total_angle_rad)) * (end_radius - start_radius)
-            
-            x = xc + current_radius * math.cos(actual_current_angle)
-            y = yc + current_radius * math.sin(actual_current_angle)
-            z = z_start + actual_current_angle * z_increment_per_rad
-            
-            # print(f"Step {i}: Angle={math.degrees(actual_current_angle):.2f}, Rad={current_radius:.2f}, X={x:.2f}, Y={y:.2f}, Z={z:.2f}")
-            self.move_to((x, y, z), current_orientation)
-            
-            # This loop structure ensures that the final point (i=num_steps) corresponds to total_angle_rad
-
-        # Explicitly move to the final calculated point to ensure precision
-        final_x = xc + end_radius * math.cos(total_angle_rad)
-        final_y = yc + end_radius * math.sin(total_angle_rad)
-        final_z = z_start + total_angle_rad * z_increment_per_rad
-        print(f"Ensuring robot reaches final spiral point: ({final_x:.2f}, {final_y:.2f}, {final_z:.2f})")
-        self.move_to((final_x, final_y, final_z), current_orientation) # move_to will set status to Idle
-        
-        print("Spiral movement finished.")
-        # sim_opc_instance.write_tag("GantryRobot.Status", "Idle") # Handled by final move_to
-
-    def laser_weld(self, start_point: Tuple[float,float,float], 
-                   end_point: Tuple[float,float,float], 
-                   speed: float, power: float, focus_setting: float):
-        """
-        Simulates a laser welding operation from start_point to end_point.
-        Maintains current orientation (Rotate, Tilt).
-        """
-        print(f"\n[GantryRobot] Starting laser weld from {start_point} to {end_point} at {speed} mm/s, power {power}W, focus {focus_setting}.")
-        self.laser_status = "WELDING"
-        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
-        print(f"[GantryRobot] Laser status: {self.laser_status}")
-
-        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
-        current_rotate_pos = self.motors[5].position
-        current_tilt_pos = self.motors[6].position
-        current_orientation = (current_rotate_pos, current_tilt_pos)
-
-        # Move to the start point of the weld
-        print(f"[GantryRobot-LaserWeld] Moving to weld start point: {start_point}")
-        self.move_to(start_point, current_orientation)
-        
-        sx, sy, sz = start_point
-        ex, ey, ez = end_point
-
-        # Calculate path details
-        dx = ex - sx
-        dy = ey - sy
-        dz = ez - sz
-        distance = math.sqrt(dx**2 + dy**2 + dz**2)
-
-        if math.isclose(distance, 0):
-            print("[GantryRobot-LaserWeld] Start and end points are the same. No weld path to follow.")
-            # Even if distance is zero, simulate a spot weld or just log
-            self.motors[0].position = ex
-            self.motors[1].position = ey
-            self.motors[2].position = ez
-            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (spot weld)")
-        elif speed <= 0:
-            print("[GantryRobot-LaserWeld] Speed is zero or negative. Cannot simulate path. Moving directly to end point.")
-            self.motors[0].position = ex
-            self.motors[1].position = ey
-            self.motors[2].position = ez
-            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (final point)")
-        else:
-            time_increment = 0.1  # seconds per step
-            step_length = speed * time_increment
-            num_steps = int(distance / step_length)
-            
-            if num_steps == 0: # If distance is very small or speed very high
-                num_steps = 1 # Ensure at least one step to cover the path
-
-            print(f"[GantryRobot-LaserWeld] Weld path distance: {distance:.2f}mm, Steps: {num_steps}")
-
-            for i in range(num_steps + 1):
-                fraction = i / num_steps
-                current_x = sx + fraction * dx
-                current_y = sy + fraction * dy
-                current_z = sz + fraction * dz
-                
-                # Directly update motor positions for X, Y, Z
-                self.motors[0].position = current_x
-                self.motors[1].position = current_y
-                self.motors[2].position = current_z
-                # Update sensor readings if we had a direct way to do so, or rely on motor.move_to if we used that
-                # For now, direct update is fine as per requirement.
-                
-                print(f"[GantryRobot-LaserWeld] Welding at ({current_x:.2f}, {current_y:.2f}, {current_z:.2f})")
-                # Optional: time.sleep(time_increment) if real-time simulation effect is desired
-
-            # Ensure final position is exactly at end_point
-            self.motors[0].position = ex
-            self.motors[1].position = ey
-            self.motors[2].position = ez
-            print(f"[GantryRobot-LaserWeld] Ensuring final weld position at ({ex:.2f}, {ey:.2f}, {ez:.2f})")
-
-        self.laser_status = "OFF"
-        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
-        print(f"[GantryRobot] Laser weld completed. Laser status: {self.laser_status}")
-
-    def laser_mark(self, target_point: Tuple[float,float,float], 
-                   text: str, speed: float, power: float, font_size: float = 10.0):
-        """
-        Simulates a laser marking operation at a target_point.
-        Maintains current orientation (Rotate, Tilt).
-        """
-        print(f"\n[GantryRobot] Starting laser mark at {target_point} with text '{text}', speed {speed} mm/s, power {power}W, font size {font_size}.")
-        self.laser_status = "MARKING"
-        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
-        print(f"[GantryRobot] Laser status: {self.laser_status}")
-
-        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
-        current_rotate_pos = self.motors[5].position
-        current_tilt_pos = self.motors[6].position
-        current_orientation = (current_rotate_pos, current_tilt_pos)
-
-        # Move to the target point for marking
-        print(f"[GantryRobot-LaserMark] Moving to mark target point: {target_point}")
-        self.move_to(target_point, current_orientation)
-        
-        # Simulate Marking Process
-        print(f"[GantryRobot-LaserMark] Marking text: '{text}'")
-        
-        if speed > 0:
-             marking_duration = len(text) * 0.1 # seconds
-        else:
-            marking_duration = len(text) * 0.5 # Longer default if speed is zero/invalid
-
-        print(f"[GantryRobot-LaserMark] Simulated marking duration: {marking_duration:.2f}s")
-        # import time # Would be needed for actual sleep
-        # time.sleep(marking_duration) # Uncomment for real-time simulation effect
-
-        self.laser_status = "OFF"
-        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
-        print(f"[GantryRobot] Laser mark completed. Laser status: {self.laser_status}")
-
-# Example usage
-if __name__ == "__main__":
-    gantry = GantryRobot()
-    # Simulate picking a metal part and placing it elsewhere
-    gantry.pick_and_place(
-        ObjectType.METAL_PART,
-        pick_pos=(100, 200, 50),
-        place_pos=(400, 100, 50)
-    )
 
         angular_step_magnitude = math.radians(10) # Fixed angular step for simplicity (e.g., 10 degrees)
         direction = 1 if total_angle_rad > 0 else -1
@@ -554,6 +385,89 @@ if __name__ == "__main__":
         speed=500
     )
 
+    def laser_weld(self, start_point: Tuple[float,float,float], 
+                   end_point: Tuple[float,float,float], 
+                   speed: float, power: float, focus_setting: float):
+        """
+        Simulates a laser welding operation from start_point to end_point.
+        Maintains current orientation (Rotate, Tilt).
+        """
+        print(f"\n[GantryRobot] Starting laser weld from {start_point} to {end_point} at {speed} mm/s, power {power}W, focus {focus_setting}.")
+        self.laser_status = "WELDING"
+        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
+        print(f"[GantryRobot] Laser status: {self.laser_status}")
+
+        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        current_rotate_pos = self.motors[5].position
+        current_tilt_pos = self.motors[6].position
+        current_orientation = (current_rotate_pos, current_tilt_pos)
+
+        # Move to the start point of the weld
+        print(f"[GantryRobot-LaserWeld] Moving to weld start point: {start_point}")
+        self.move_to(start_point, current_orientation)
+        
+        sx, sy, sz = start_point
+        ex, ey, ez = end_point
+
+        # Calculate path details
+        dx = ex - sx
+        dy = ey - sy
+        dz = ez - sz
+        distance = math.sqrt(dx**2 + dy**2 + dz**2)
+
+        if math.isclose(distance, 0):
+            print("[GantryRobot-LaserWeld] Start and end points are the same. No weld path to follow.")
+            # Even if distance is zero, simulate a spot weld or just log
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (spot weld)")
+        elif speed <= 0:
+            print("[GantryRobot-LaserWeld] Speed is zero or negative. Cannot simulate path. Moving directly to end point.")
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Welding at ({ex:.2f}, {ey:.2f}, {ez:.2f}) (final point)")
+        else:
+            time_increment = 0.1  # seconds per step
+            step_length = speed * time_increment
+            num_steps = int(distance / step_length)
+            
+            if num_steps == 0: # If distance is very small or speed very high
+                num_steps = 1 # Ensure at least one step to cover the path
+
+            print(f"[GantryRobot-LaserWeld] Weld path distance: {distance:.2f}mm, Steps: {num_steps}")
+
+            for i in range(num_steps + 1):
+                fraction = i / num_steps
+                current_x = sx + fraction * dx
+                current_y = sy + fraction * dy
+                current_z = sz + fraction * dz
+                
+                # Directly update motor positions for X, Y, Z
+                self.motors[0].position = current_x
+                self.motors[1].position = current_y
+                self.motors[2].position = current_z
+                # Update sensor readings if we had a direct way to do so, or rely on motor.move_to if we used that
+                # For now, direct update is fine as per requirement.
+                
+                print(f"[GantryRobot-LaserWeld] Welding at ({current_x:.2f}, {current_y:.2f}, {current_z:.2f})")
+                # Optional: time.sleep(time_increment) if real-time simulation effect is desired
+
+            # Ensure final position is exactly at end_point
+            self.motors[0].position = ex
+            self.motors[1].position = ey
+            self.motors[2].position = ez
+            print(f"[GantryRobot-LaserWeld] Ensuring final weld position at ({ex:.2f}, {ey:.2f}, {ez:.2f})")
+
+        self.laser_status = "OFF"
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
+        print(f"[GantryRobot] Laser weld completed. Laser status: {self.laser_status}")
+
+
+    # Test arc_move
+    # Scenario 1: 90-degree arc
+
     # Test laser_weld
     print("\n--- Testing Laser Weld ---")
     gantry.laser_weld(
@@ -573,6 +487,54 @@ if __name__ == "__main__":
         end_point=(10,10,10),
         speed=10, power=500, focus_setting=0.2
     )
+
+    def laser_mark(self, target_point: Tuple[float,float,float], 
+                   text: str, speed: float, power: float, font_size: float = 10.0):
+        """
+        Simulates a laser marking operation at a target_point.
+        Maintains current orientation (Rotate, Tilt).
+        """
+        print(f"\n[GantryRobot] Starting laser mark at {target_point} with text '{text}', speed {speed} mm/s, power {power}W, font size {font_size}.")
+        self.laser_status = "MARKING"
+        sim_opc_instance.write_tag("GantryRobot.Status", self.laser_status)
+        print(f"[GantryRobot] Laser status: {self.laser_status}")
+
+        # Get current orientation (Rotate, Tilt) - assuming motors 5 and 6
+        current_rotate_pos = self.motors[5].position
+        current_tilt_pos = self.motors[6].position
+        current_orientation = (current_rotate_pos, current_tilt_pos)
+
+        # Move to the target point for marking
+        print(f"[GantryRobot-LaserMark] Moving to mark target point: {target_point}")
+        self.move_to(target_point, current_orientation)
+        
+        # Simulate Marking Process
+        print(f"[GantryRobot-LaserMark] Marking text: '{text}'")
+        
+        # Simplified duration calculation: assume each character takes a certain amount of time
+        # A more complex simulation might consider the path length of the text strokes and actual speed.
+        # For now, let's say each character takes a fixed time inversely proportional to speed,
+        # or simply a fixed time like 0.1s per char.
+        # Let's use a base time per character and adjust by a factor of speed.
+        # For example, 0.2s per char at a nominal speed of 50mm/s.
+        # If speed is 100mm/s, time is 0.1s. If speed is 25mm/s, time is 0.4s.
+        # So, duration_per_char = (0.2 * 50) / speed if speed > 0 else 0.2 * 50 (avoid div by zero)
+        
+        if speed > 0:
+            # Example: Assume 10 units of "work" per character.
+            # marking_duration = (len(text) * 10.0) / speed
+            # Simpler: 0.1s per character, speed parameter is for approach or a general setting.
+             marking_duration = len(text) * 0.1 # seconds
+        else:
+            marking_duration = len(text) * 0.5 # Longer default if speed is zero/invalid
+
+        print(f"[GantryRobot-LaserMark] Simulated marking duration: {marking_duration:.2f}s")
+        # import time # Would be needed for actual sleep
+        # time.sleep(marking_duration) # Uncomment for real-time simulation effect
+
+        self.laser_status = "OFF"
+        sim_opc_instance.write_tag("GantryRobot.Status", "Idle")
+        print(f"[GantryRobot] Laser mark completed. Laser status: {self.laser_status}")
 
     # Test spiral_move
     print("\n--- Testing Spiral Move: Scenario 1 (Flat Outward Spiral) ---")

@@ -13,6 +13,7 @@ This project simulates the operations of a gantry robot system designed for vari
   - [PCB Assembly](#pcb-assembly)
   - [Door Assembly (Conceptual)](#door-assembly-conceptual)
   - [Engine Assembly (Conceptual)](#engine-assembly-conceptual)
+- [Visual Simulation](#visual-simulation)
 - [Setup and Installation](#setup-and-installation)
 - [How to Run](#how-to-run)
   - [Running Simulations via VS Code Tasks](#running-simulations-via-vs-code-tasks)
@@ -52,6 +53,14 @@ To create a comprehensive simulation environment that enables:
 - **Laser Operations (New)**:
     - `laser_weld`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate linear laser welding between two points with specified parameters (speed, power, focus).
     - `laser_mark`: Method in `GantryRobot` (in `SimpleGantrySimulation`) to simulate laser marking of text at a target point with specified parameters.
+- **Visual Simulation (New)**:
+    - Interactive 2D visualization of the gantry robot system using Pygame.
+    - Real-time visual representation of robot movements, including path tracing.
+    - Color-coded display of different gripper types and object types.
+    - Visual feedback for laser operations with dynamic beam rendering.
+    - Support for all robot operations, including advanced movements (arc, spiral).
+    - Thread-safe implementation that can run alongside simulation scenarios.
+    - Ability to add, move, and remove objects in the visualization.
 - **Simulated Database (In-Memory)**: Manages data for recipes, production results, errors, and KPIs. *(Implemented in `sim_database_manager.py`)*
 - **Enhanced File Logging**: Structured JSON logs for errors, production results, and KPIs with log rotation. *(Implemented in `file_logger.py`)*
 - **Simulated OPC Communication**: Mimics an OPC server for tag-based data exchange, with example integration in scenarios. *(Implemented in `sim_opc_server.py`)*
@@ -82,6 +91,10 @@ vscodeProject2/
 │   ├── door_assembly.py        # Simulation for door assembly, demonstrates arc and spiral moves.
 │   ├── engine_assembly.py      # Simulation for engine assembly, now includes a laser welding step.
 │   └── pcb_assembly.py         # Simulation for PCB assembly, now includes laser marking and database logging.
+├── visualization/              # Contains modules for the visual simulation
+│   ├── __init__.py             # Package initialization
+│   ├── run_visual_sim.py       # Entry point to run simulations with visualization
+│   └── visual_sim.py           # Core visualization logic using Pygame
 ├── README.md                   # This file
 ├── requirements.txt            # Project dependencies
 └── tests/                      # Unit tests
@@ -212,7 +225,7 @@ graph TD
     ```bash
     pip install -r requirements.txt
     ```
-    This will install `pylint` and `black`.
+    This will install development tools like `pylint` and `black`, as well as required libraries like `pygame` for the visual simulation.
 
 5.  **VS Code Workspace Settings**:
     The `.code-workspace` file already configures Python path, formatting (black), linting (pylint), and testing (unittest). Open the `vscodeProject2.code-workspace` file in VS Code (`File > Open Workspace from File...`). VS Code might prompt you to select a Python interpreter; choose the one from your virtual environment if you created one.
@@ -257,6 +270,13 @@ python SimpleGantrySimulation --scenario pcb_assembly
 ```
 *(The exact command will depend on how `SimpleGantrySimulation` is structured to call different scenarios.)*
 
+**Running Visual Simulation:**
+To run a scenario with visual simulation:
+```powershell
+python .\visualization\run_visual_sim.py --scenario demo
+```
+Available scenarios include `demo`, `door_assembly`, `engine_assembly`, and `pcb_assembly`.
+
 **Running `AnalyzeSerialData.py`**:
 The purpose of `AnalyzeSerialData.py` is not fully detailed here. Assuming it takes a data file as input or connects to a serial port:
 ```powershell
@@ -280,11 +300,13 @@ python AnalyzeSerialData.py <arguments_if_any>
 - `improvements/compound_movements.py` now contains the implemented logic for `arc_move` and `spiral_move`, which are utilized by `SimpleGantrySimulation`.
 - `SimpleGantrySimulation`'s `GantryRobot` class now includes `laser_weld` and `laser_mark` methods.
 - `sim_database_manager.py` provides an in-memory database simulation with CRUD operations for recipes, results, errors, and KPIs.
+- **Visual Simulation**: A complete visualization module using Pygame has been implemented, providing a real-time graphical representation of the gantry robot's operations, advanced movements, laser operations, and object interactions.
 - VS Code tasks and launch configurations are set up for existing runnable parts.
 - **Unit tests** for `AnalyzeSerialData.py`, `SimpleGantrySimulation` (specifically the `GantryRobot` class, including laser functions), and `sim_database_manager.py` have been added in the `tests/` directory.
 
 **Potential Roadmap / Future Enhancements:**
-- **GUI Development**: Implement a graphical user interface to visualize the simulation.
+- **GUI Development**: Extend the current visualization with more interactive elements and control panels.
+- **3D Visualization**: Upgrade the current 2D visualization to a full 3D representation using PyOpenGL or a similar library.
 - **Further Advanced Robot Kinematics**: More realistic robot arm movements and collision detection.
 - **Expanded Component Library**: Add more diverse components with complex properties.
 - **Detailed Scenario Implementation**: Fully develop `door_assembly.py` and `engine_assembly.py`.
@@ -456,6 +478,84 @@ To facilitate the development of a separate User Interface (UI) for visualizing 
     -   **Conceptual Control**: Includes a function `set_opc_tag_value()` to allow external modification of OPC tags. Other control functions (start/stop/pause scenario) are designed as placeholders to indicate future API extension points but are not currently implemented due to the simulation's synchronous architecture.
 -   **Usage**: A UI's backend component could import and use the functions from `ui_interaction_service.py` to query the simulation's state and history for display.
 -   **Limitations**: Direct real-time, event-driven push updates from the simulation to a UI are not part of this layer; a UI would typically poll these service functions. Deep robot state introspection is limited by reliance on OPC tags set by scenarios rather than direct GantryRobot class modification.
+
+## Visual Simulation
+
+The project now includes a comprehensive visual simulation capability that provides a real-time graphical representation of the gantry robot's operations. This visualization makes it easier to understand, debug, and demonstrate the robot's movements and interactions.
+
+### Visual Simulation Features
+
+- **Real-time 2D Visualization**: Provides a top-down view of the gantry robot's movements using Pygame.
+- **Robot Representation**: Visualizes the robot's body and current gripper with appropriate colors and sizing.
+- **Path Tracing**: Shows the robot's movement history with a trailing path that fades over time.
+- **Coordinate System**: Displays a grid with labeled axes to understand spatial positioning.
+- **Object Visualization**: Different object types (Box, Cylinder, Sheet, Metal Part, Fragile) are displayed with distinctive shapes and colors.
+- **Gripper Visualization**: Different gripper types (Suction, Parallel, Magnetic, Soft) are shown with distinctive colors.
+- **Z-Axis Representation**: Objects and the robot appear smaller when at higher Z positions, creating a simple perspective effect.
+- **Laser Operations Visualization**: 
+  - Displays laser status (WELDING, MARKING) in the interface
+  - Renders a dynamic laser beam during welding and marking operations
+- **Advanced Movement Visualization**: Properly visualizes complex movements like arcs and spirals through path tracing.
+- **Multi-threading Support**: Runs the visualization in a separate thread from the simulation logic, ensuring smooth rendering.
+- **Thread Safety**: Uses locks to prevent race conditions when updating visual elements.
+
+### Implementation Details
+
+The visual simulation is implemented in the `visualization` directory:
+
+- **`visual_sim.py`**: Core visualization module that handles rendering the robot, objects, and UI elements.
+  - **`VisualSimulation`** class: Manages the Pygame window, rendering, and interaction.
+  - **Key methods**:
+    - `draw_robot()`: Renders the robot with proper position, orientation, and gripper.
+    - `draw_objects()`: Renders all tracked objects with appropriate visual representations.
+    - `add_object()`, `move_object()`, `remove_object()`: Manage objects in the visualization.
+    - `run_scenario()`: Executes a simulation scenario while visualizing it.
+
+- **`run_visual_sim.py`**: Provides a command-line interface for running different scenarios with visualization.
+  - Supports running any of the implemented scenarios (PCB assembly, door assembly, engine assembly).
+  - Includes a demo mode that showcases various robot capabilities.
+
+### Monkey Patching for Visualization
+
+The `patch_gantry_robot()` function in `visual_sim.py` enhances the `GantryRobot` class with visualization capabilities:
+- Intercepts `pick_and_place()` and `move_to()` calls to update the visualization accordingly.
+- Tracks objects as they are manipulated by the robot.
+- Maintains visual consistency with the actual robot state.
+
+### How to Run the Visual Simulation
+
+The visual simulation can be run using:
+
+```powershell
+python .\visualization\run_visual_sim.py --scenario <scenario_name>
+```
+
+Available scenarios:
+- `demo`: A simple demonstration of various robot movements and operations
+- `door_assembly`: Visualization of the door assembly process
+- `engine_assembly`: Visualization of the engine assembly process
+- `pcb_assembly`: Visualization of the PCB assembly process
+
+Example:
+```powershell
+python .\visualization\run_visual_sim.py --scenario demo
+```
+
+### Interaction with the Visualization
+
+While the visualization is running:
+- Press `ESC` key to exit the visualization.
+- The display shows the current robot position, gripper type, and laser status (if active).
+- All robot movements and operations are visually represented in real-time.
+
+### Technical Requirements
+
+The visual simulation requires:
+- Pygame library (included in `requirements.txt`)
+- Python 3.x with threading support
+- Display capabilities to render the Pygame window
+
+This visual simulation significantly enhances the project by providing an intuitive way to understand and verify the robot's behavior, making it valuable for debugging, demonstration, and educational purposes.
 
 ## Contributing
 

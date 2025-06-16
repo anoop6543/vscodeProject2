@@ -13,7 +13,15 @@
 		"python.linting.mypyEnabled": false,
 		"python.testing.unittestEnabled": true,
 		"python.testing.pytestEnabled": false,
-		"python.testing.nosetestsEnabled": false
+		"python.testing.nosetestsEnabled": false,
+		"github.copilot.nextEditSuggestions.fixes": true,
+		"github.copilot.chat.codesearch.enabled": true,
+		"github.copilot.chat.agent.thinkingTool": true,
+		"github.copilot.chat.editor.temporalContext.enabled": true,
+		"github.copilot.chat.edits.temporalContext.enabled": true,
+		"github.copilot.chat.generateTests.codeLens": true,
+		"github.copilot.chat.search.keywordSuggestions": true,
+		"githubIssues.alwaysPromptForNewIssueRepo": true
 	},
 	"launch": {
 		"configurations": [
