@@ -7,6 +7,8 @@ import math
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from SimpleGantrySimulation import GantryRobot, ObjectType, ForceSensor
+from laser_marker import create_laser_marker
+from laser_marker_adapter import LaserMarkerAdapter
 
 # Configure logging
 logging.basicConfig(
