@@ -124,6 +124,61 @@ class DoorAssemblyStation:
             place_pos=(300, 200, 25)
         )
         
+        # Phase 3.5: Laser marking door ID before window installation
+        logger.info("Phase 3.5: Laser marking door ID")
+        
+        # Create a laser marker adapter with a fiber laser for marking
+        laser_adapter = LaserMarkerAdapter(self.gantry, vendor="coherent", model="PowerLine F20")
+        logger.info(f"Using {laser_adapter.get_laser_marker().name} for door ID marking")
+        
+        # Generate a unique door ID
+        door_id = f"DOOR-{datetime.now().strftime('%Y%m%d')}-{hash(datetime.now()) % 1000:03d}"
+        
+        # Mark the door ID on the frame
+        marking_position = (310, 160, 21)  # Position on the door frame
+        self.gantry.laser_mark(
+            target_point=marking_position,
+            text=door_id,
+            speed=150,
+            power=25,
+            font_size=5.0
+        )
+        
+        logger.info(f"Door marked with ID: {door_id}")
+        
+        # Phase 4.5: Laser cutting seal channels before weather stripping
+        logger.info("Phase 4.5: Laser cutting seal channels")
+        
+        # Switch to a CO2 laser for cutting
+        laser_adapter.replace_laser_marker("coherent", "Diamond CO2")
+        logger.info(f"Switched to {laser_adapter.get_laser_marker().name} for seal channel cutting")
+        
+        # Define cut paths for the seal channels
+        # We'll create small channel cuts at strategic points
+        cut_paths = [
+            # Top edge channel
+            ((270, 150, 25), (330, 150, 25)),
+            # Right edge channel
+            ((340, 170, 25), (340, 230, 25)),
+            # Bottom edge channel
+            ((330, 250, 25), (270, 250, 25)),
+            # Left edge channel
+            ((260, 230, 25), (260, 170, 25))
+        ]
+        
+        # Cut the seal channels
+        for i, (start_point, end_point) in enumerate(cut_paths):
+            logger.info(f"Cutting seal channel {i+1}/{len(cut_paths)}")
+            self.gantry.laser_weld(  # Using laser_weld for cutting operation
+                start_point=start_point,
+                end_point=end_point,
+                speed=20,
+                power=150,
+                focus_setting=0.5
+            )
+        
+        logger.info("Seal channel cutting completed")
+        
         # Phase 4: Apply weather stripping (flexible material)
         logger.info("Phase 4: Weather stripping application")
         # Define weather strip path around the door
@@ -186,16 +241,36 @@ class DoorAssemblyStation:
             logger.info(f"Corner {i+1} test force: {force:.2f}N")
             if force < 5 or force > 50:
                 logger.warning(f"Quality issue at corner {i+1}: force = {force:.2f}N")
-            self.gantry.extend_retract(False)
-        
+            self.gantry.extend_retract(False)        
         logger.info("Door panel assembly completed")
 
 if __name__ == "__main__":
     start_time = datetime.now()
     logger.info(f"Assembly start time: {start_time}")
     
+    # Run the main door assembly process
     door_station = DoorAssemblyStation()
     door_station.run_assembly_process()
+    
+    # Demonstrate additional laser marker features directly
+    logger.info("Demonstrating additional laser marker features")
+    
+    # Create a Coherent laser marker directly for demonstration
+    coherent = create_laser_marker("coherent", "StarFiber 150")
+    logger.info(f"Created {coherent} for direct demonstration")
+    
+    # In a real implementation, you would use saved jobs and additional features
+    # Here we'll just show the direct marking capability
+    logger.info("Direct marking with coherent laser (without gantry)")
+    coherent.mark(
+        target_point=(300, 200, 25),
+        text="DOOR-TEMPLATE",
+        power=40,
+        speed=140,
+        font_size=8.0
+    )
+    
+    logger.info("Laser marker feature demonstration completed")
     
     end_time = datetime.now()
     logger.info(f"Assembly end time: {end_time}")
