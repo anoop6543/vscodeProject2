@@ -198,6 +198,42 @@ graph TD
     EA_J --> EA_K;
 ```
 
+### Battery Pack Assembly
+
+This advanced scenario simulates the assembly of an EV battery module, showcasing complex path following and multi-robot coordination.
+
+**Process Flow:**
+1.  **Thermal Paste Dispensing**: A robot applies thermal paste to the module case using a continuous "snake" path (demonstrating complex path following).
+2.  **Cell Loading**: A robot picks and places 16 battery cells into a 4x4 matrix pattern.
+3.  **Busbar Welding**: A high-power laser welder performs spot welds to connect busbars to cell terminals.
+4.  **Laser Marking**: The finished module is laser marked with a unique ID.
+
+**Key Features Used:**
+-   **Complex Path Generation**: For paste dispensing.
+-   **Matrix Pick & Place**: Precision handling of multiple objects.
+-   **Laser Welding & Marking**: Utilizing the `LaserMarkerAdapter` with a simulated TRUMPF laser.
+-   **Data Integration**: Extensive logging to the simulated database (Recipes, Results, KPIs) and OPC server.
+
+### Automotive Giga Fuse Assembly
+
+A high-tech scenario simulating the manufacturing of automotive giga fuses, featuring MES integration and HMI interaction.
+
+**Process Flow:**
+1.  **Assembly**: Pick and place fuse element.
+2.  **Calibration**: Laser trimming to adjust resistance to precise specifications.
+3.  **Characterization**: High-current pulse testing to measure voltage drop.
+4.  **Enclosure**: Assembly of the protective housing.
+5.  **Testing**: Final continuity and visual checks.
+6.  **Laser Marking**: Marking of part number, serial, and rating.
+
+**Key Features Used:**
+-   **MES Integration**: Simulated connection to an "Ignition" MES layer via OPC tags and status updates.
+-   **HMI Interaction**: Exposing key data and controls (Start/Stop/E-Stop) via a simulated HMI layer.
+-   **Full Lifecycle**: Tracking the product through multiple distinct manufacturing stages.
+-   **Robust Error Handling**: E-Stop logic and error recovery steps.
+
+
+
 ## Setup and Installation
 
 1.  **Prerequisites**:
@@ -278,7 +314,7 @@ To run a scenario with visual simulation:
 ```powershell
 python .\visualization\run_visual_sim.py --scenario demo
 ```
-Available scenarios include `demo`, `door_assembly`, `engine_assembly`, and `pcb_assembly`.
+Available scenarios include `demo`, `door_assembly`, `engine_assembly`, `pcb_assembly`, and `battery_pack`.
 
 **Running `AnalyzeSerialData.py`**:
 The purpose of `AnalyzeSerialData.py` is not fully detailed here. Assuming it takes a data file as input or connects to a serial port:

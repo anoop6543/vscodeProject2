@@ -1,0 +1,47 @@
+2025-11-18 23:23:11,484 - INFO - [LaserMarker.Coherent_PowerLine_E] - Initializing Coherent_PowerLine_E (FIBER laser)
+2025-11-18 23:23:11,985 - INFO - [LaserMarker.Coherent_PowerLine_E] - Coherent_PowerLine_E initialized and ready
+2025-11-18 23:23:11,985 - INFO - [LaserMarkerAdapter] - LaserMarkerAdapter initialized with Coherent_PowerLine_E
+2025-11-18 23:23:11,985 - INFO - [LaserMarker.Keyence_MD-X] - Initializing Keyence_MD-X (FIBER laser)
+2025-11-18 23:23:12,485 - INFO - [LaserMarker.Keyence_MD-X] - Keyence_MD-X initialized and ready
+2025-11-18 23:23:12,485 - INFO - [LaserMarkerAdapter] - LaserMarkerAdapter initialized with Keyence_MD-X
+2025-11-18 23:23:12,486 - INFO - [GigaFuseLine] - Starting Production Run: 2 units
+2025-11-18 23:23:12,486 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Starting Production Run
+2025-11-18 23:23:12,487 - INFO - [GigaFuseLine] - Starting Assembly for GF500-20251118-0001
+2025-11-18 23:23:12,487 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Assembling GF500-20251118-0001
+2025-11-18 23:23:12,487 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Assembly", "serial": "GF500-20251118-0001", "status": "Started", "data": null, "timestamp": "2025-11-18T23:23:12.487767"}
+2025-11-18 23:23:12,489 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Assembly", "serial": "GF500-20251118-0001", "status": "Completed", "data": {"RawResistance": 0.0017481844207336784}, "timestamp": "2025-11-18T23:23:12.489767"}
+2025-11-18 23:23:12,490 - INFO - [GigaFuseLine] - Starting Calibration (Laser Trim) for GF500-20251118-0001
+2025-11-18 23:23:12,490 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Calibrating GF500-20251118-0001
+2025-11-18 23:23:12,491 - ERROR - [LaserMarker.Coherent_PowerLine_E] - Coherent_PowerLine_E does not support welding mode
+2025-11-18 23:23:12,491 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Calibration", "serial": "GF500-20251118-0001", "status": "Completed", "data": {"CalibratedResistance": 0.0019984451859458015}, "timestamp": "2025-11-18T23:23:12.491767"}
+2025-11-18 23:23:12,491 - INFO - [GigaFuseLine] - Starting Characterization for GF500-20251118-0001
+2025-11-18 23:23:12,491 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Testing GF500-20251118-0001
+2025-11-18 23:23:12,492 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Characterization", "serial": "GF500-20251118-0001", "status": "Completed", "data": {"VoltageDrop": 0.9992225929729007}, "timestamp": "2025-11-18T23:23:12.492829"}
+2025-11-18 23:23:12,492 - INFO - [GigaFuseLine] - Enclosing GF500-20251118-0001
+2025-11-18 23:23:12,493 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Enclosure", "serial": "GF500-20251118-0001", "status": "Completed", "data": null, "timestamp": "2025-11-18T23:23:12.493834"}
+2025-11-18 23:23:12,493 - INFO - [GigaFuseLine] - Final Testing GF500-20251118-0001
+2025-11-18 23:23:12,493 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Testing", "serial": "GF500-20251118-0001", "status": "Passed", "data": null, "timestamp": "2025-11-18T23:23:12.493834"}
+2025-11-18 23:23:12,494 - INFO - [GigaFuseLine] - Laser Marking GF500-20251118-0001
+2025-11-18 23:23:12,494 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Marking GF500-20251118-0001
+2025-11-18 23:23:12,494 - WARNING - [LaserMarker.Keyence_MD-X] - Power value 80W exceeds maximum 50.0W, limiting to maximum
+2025-11-18 23:23:12,495 - INFO - [LaserMarker.Keyence_MD-X] - Starting to mark text 'GIGA-FUSE | GF500-20251118-0001 | 500A' at (100, 100, 20) with 50.0W power
+2025-11-18 23:23:12,495 - INFO - [LaserMarker.Keyence_MD-X] - Completed marking text 'GIGA-FUSE | GF500-20251118-0001 | 500A'
+2025-11-18 23:23:12,495 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Marking", "serial": "GF500-20251118-0001", "status": "Completed", "data": null, "timestamp": "2025-11-18T23:23:12.495840"}
+2025-11-18 23:23:12,495 - INFO - [GigaFuseLine] - Starting Assembly for GF500-20251118-0002
+2025-11-18 23:23:12,496 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Assembling GF500-20251118-0002
+2025-11-18 23:23:12,496 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Assembly", "serial": "GF500-20251118-0002", "status": "Started", "data": null, "timestamp": "2025-11-18T23:23:12.496846"}
+2025-11-18 23:23:12,497 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Assembly", "serial": "GF500-20251118-0002", "status": "Completed", "data": {"RawResistance": 0.0017969763538005406}, "timestamp": "2025-11-18T23:23:12.497834"}
+2025-11-18 23:23:12,497 - INFO - [GigaFuseLine] - Starting Calibration (Laser Trim) for GF500-20251118-0002
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Calibrating GF500-20251118-0002
+2025-11-18 23:23:12,498 - ERROR - [LaserMarker.Coherent_PowerLine_E] - Coherent_PowerLine_E does not support welding mode
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Calibration", "serial": "GF500-20251118-0002", "status": "Completed", "data": {"CalibratedResistance": 0.001999102226208473}, "timestamp": "2025-11-18T23:23:12.498835"}
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - Starting Characterization for GF500-20251118-0002
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Testing GF500-20251118-0002
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Characterization", "serial": "GF500-20251118-0002", "status": "Completed", "data": {"VoltageDrop": 0.9995511131042365}, "timestamp": "2025-11-18T23:23:12.498835"}
+2025-11-18 23:23:12,498 - INFO - [GigaFuseLine] - Enclosing GF500-20251118-0002
+2025-11-18 23:23:12,500 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Enclosure", "serial": "GF500-20251118-0002", "status": "Completed", "data": null, "timestamp": "2025-11-18T23:23:12.500834"}
+2025-11-18 23:23:12,500 - INFO - [GigaFuseLine] - Final Testing GF500-20251118-0002
+2025-11-18 23:23:12,500 - ERROR - [GigaFuseLine] - Fuse GF500-20251118-0002 FAILED final test
+2025-11-18 23:23:12,500 - INFO - [GigaFuseLine] - [MES_LINK] >> {"target": "Ignition_MES_Server", "station": "Testing", "serial": "GF500-20251118-0002", "status": "Failed", "data": null, "timestamp": "2025-11-18T23:23:12.500834"}
+2025-11-18 23:23:12,501 - INFO - [GigaFuseLine] - Skipping marking for failed part GF500-20251118-0002
+2025-11-18 23:23:12,501 - INFO - [GigaFuseLine] - [HMI_DISPLAY] Production Run Finished

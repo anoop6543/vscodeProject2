@@ -21,6 +21,7 @@ class ScenarioType(Enum):
     DOOR_ASSEMBLY = "door_assembly"
     ENGINE_ASSEMBLY = "engine_assembly"
     PCB_ASSEMBLY = "pcb_assembly"
+    BATTERY_PACK = "battery_pack"
     DEMO = "demo"
 
 def run_demo(robot, vis=None):
@@ -144,6 +145,24 @@ def run_pcb_assembly():
     
     return robot, vis
 
+def run_battery_pack_assembly():
+    """Run the Battery Pack assembly scenario with visualization."""
+    from scenarios.battery_pack_assembly import BatteryPackAssemblyLine
+    
+    line = BatteryPackAssemblyLine()
+    
+    # Visualize the welder robot as it does the most interesting work (welding/marking)
+    # Or dispenser. Let's pick welder.
+    robot, vis = create_visualization(line.robots["welder"])
+    
+    # Start visualization
+    vis.start()
+    
+    # Run the scenario
+    vis.run_scenario(line.run_scenario, num_modules=1)
+    
+    return robot, vis
+
 def run_demo_scenario():
     """Run the demo scenario with visualization."""
     robot, vis = create_visualization()
@@ -170,12 +189,17 @@ def main():
     scenario_type = ScenarioType(args.scenario)
     
     try:
+        robot = None
+        vis = None
+        
         if scenario_type == ScenarioType.DOOR_ASSEMBLY:
             robot, vis = run_door_assembly()
         elif scenario_type == ScenarioType.ENGINE_ASSEMBLY:
             robot, vis = run_engine_assembly()
         elif scenario_type == ScenarioType.PCB_ASSEMBLY:
             robot, vis = run_pcb_assembly()
+        elif scenario_type == ScenarioType.BATTERY_PACK:
+            robot, vis = run_battery_pack_assembly()
         elif scenario_type == ScenarioType.DEMO:
             robot, vis = run_demo_scenario()
         
@@ -188,7 +212,8 @@ def main():
         except KeyboardInterrupt:
             print("Interrupted by user")
         finally:
-            vis.stop()
+            if vis:
+                vis.stop()
     
     except Exception as e:
         print(f"Error running scenario {scenario_type.value}: {e}")

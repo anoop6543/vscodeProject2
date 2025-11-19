@@ -1,0 +1,121 @@
+2025-11-18 22:53:39,382 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Initializing TRUMPF_TruMark_6130 (FIBER laser)
+2025-11-18 22:53:39,884 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - TRUMPF_TruMark_6130 initialized and ready
+2025-11-18 22:53:39,884 - INFO - [LaserMarkerAdapter] - LaserMarkerAdapter initialized with TRUMPF_TruMark_6130
+2025-11-18 22:53:39,884 - INFO - [BatteryPackAssembly] - Starting Battery Pack Assembly Scenario for 1 modules
+2025-11-18 22:53:39,896 - INFO - [BatteryPackAssembly] - Processing Module: MOD_20251118_001
+2025-11-18 22:53:39,896 - INFO - [BatteryPackAssembly] - Moving conveyor by 500mm
+2025-11-18 22:53:42,397 - INFO - [BatteryPackAssembly] - Conveyor movement finished.
+2025-11-18 22:53:42,397 - INFO - [Robot.dispenser] - Starting thermal paste application at (200, 200, 0)
+2025-11-18 22:53:42,398 - INFO - [Robot.dispenser] - Dispenser valve OPEN
+2025-11-18 22:53:42,401 - INFO - [Robot.dispenser] - Dispenser valve CLOSED
+2025-11-18 22:53:42,402 - INFO - [Robot.cell_loader] - Starting cell loading process (4x4 Matrix)
+2025-11-18 22:53:42,404 - WARNING - [Robot.cell_loader] - High insertion force detected at 0,0: 84.26N
+2025-11-18 22:53:42,404 - INFO - [Robot.cell_loader] - Placed cell CELL_0_0 at (0, 0)
+2025-11-18 22:53:42,407 - INFO - [Robot.cell_loader] - Placed cell CELL_0_1 at (0, 1)
+2025-11-18 22:53:42,409 - INFO - [Robot.cell_loader] - Placed cell CELL_0_2 at (0, 2)
+2025-11-18 22:53:42,411 - INFO - [Robot.cell_loader] - Placed cell CELL_0_3 at (0, 3)
+2025-11-18 22:53:42,413 - WARNING - [Robot.cell_loader] - High insertion force detected at 1,0: 55.14N
+2025-11-18 22:53:42,413 - INFO - [Robot.cell_loader] - Placed cell CELL_1_0 at (1, 0)
+2025-11-18 22:53:42,417 - INFO - [Robot.cell_loader] - Placed cell CELL_1_1 at (1, 1)
+2025-11-18 22:53:42,418 - WARNING - [Robot.cell_loader] - High insertion force detected at 1,2: 72.14N
+2025-11-18 22:53:42,419 - INFO - [Robot.cell_loader] - Placed cell CELL_1_2 at (1, 2)
+2025-11-18 22:53:42,421 - INFO - [Robot.cell_loader] - Placed cell CELL_1_3 at (1, 3)
+2025-11-18 22:53:42,424 - INFO - [Robot.cell_loader] - Placed cell CELL_2_0 at (2, 0)
+2025-11-18 22:53:42,426 - WARNING - [Robot.cell_loader] - High insertion force detected at 2,1: 56.45N
+2025-11-18 22:53:42,427 - INFO - [Robot.cell_loader] - Placed cell CELL_2_1 at (2, 1)
+2025-11-18 22:53:42,428 - WARNING - [Robot.cell_loader] - High insertion force detected at 2,2: 71.88N
+2025-11-18 22:53:42,429 - INFO - [Robot.cell_loader] - Placed cell CELL_2_2 at (2, 2)
+2025-11-18 22:53:42,431 - WARNING - [Robot.cell_loader] - High insertion force detected at 2,3: 83.77N
+2025-11-18 22:53:42,431 - INFO - [Robot.cell_loader] - Placed cell CELL_2_3 at (2, 3)
+2025-11-18 22:53:42,434 - INFO - [Robot.cell_loader] - Placed cell CELL_3_0 at (3, 0)
+2025-11-18 22:53:42,436 - INFO - [Robot.cell_loader] - Placed cell CELL_3_1 at (3, 1)
+2025-11-18 22:53:42,438 - WARNING - [Robot.cell_loader] - High insertion force detected at 3,2: 58.69N
+2025-11-18 22:53:42,438 - INFO - [Robot.cell_loader] - Placed cell CELL_3_2 at (3, 2)
+2025-11-18 22:53:42,441 - INFO - [Robot.cell_loader] - Placed cell CELL_3_3 at (3, 3)
+2025-11-18 22:53:42,441 - INFO - [Robot.welder] - Starting busbar welding process
+2025-11-18 22:53:42,441 - INFO - [Robot.welder] - Welding cell terminal at (0, 0)
+2025-11-18 22:53:42,441 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,441 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (208, 210, 65) to (212, 210, 65) with 125.0W power
+2025-11-18 22:53:42,441 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,442 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,442 - INFO - [Robot.welder] - Welding cell terminal at (0, 1)
+2025-11-18 22:53:42,442 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,442 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (228, 210, 65) to (232, 210, 65) with 125.0W power
+2025-11-18 22:53:42,442 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,442 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,443 - INFO - [Robot.welder] - Welding cell terminal at (0, 2)
+2025-11-18 22:53:42,443 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,443 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (248, 210, 65) to (252, 210, 65) with 125.0W power
+2025-11-18 22:53:42,443 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,443 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,443 - INFO - [Robot.welder] - Welding cell terminal at (0, 3)
+2025-11-18 22:53:42,444 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,444 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (268, 210, 65) to (272, 210, 65) with 125.0W power
+2025-11-18 22:53:42,444 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,444 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,444 - INFO - [Robot.welder] - Welding cell terminal at (1, 0)
+2025-11-18 22:53:42,445 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (208, 230, 65) to (212, 230, 65) with 125.0W power
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,445 - INFO - [Robot.welder] - Welding cell terminal at (1, 1)
+2025-11-18 22:53:42,445 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (228, 230, 65) to (232, 230, 65) with 125.0W power
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,445 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,445 - INFO - [Robot.welder] - Welding cell terminal at (1, 2)
+2025-11-18 22:53:42,447 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,447 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (248, 230, 65) to (252, 230, 65) with 125.0W power
+2025-11-18 22:53:42,447 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,448 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,448 - INFO - [Robot.welder] - Welding cell terminal at (1, 3)
+2025-11-18 22:53:42,448 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,448 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (268, 230, 65) to (272, 230, 65) with 125.0W power
+2025-11-18 22:53:42,448 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,448 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,448 - INFO - [Robot.welder] - Welding cell terminal at (2, 0)
+2025-11-18 22:53:42,449 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,449 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (208, 250, 65) to (212, 250, 65) with 125.0W power
+2025-11-18 22:53:42,449 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,449 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,449 - INFO - [Robot.welder] - Welding cell terminal at (2, 1)
+2025-11-18 22:53:42,450 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,450 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (228, 250, 65) to (232, 250, 65) with 125.0W power
+2025-11-18 22:53:42,450 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,450 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,450 - INFO - [Robot.welder] - Welding cell terminal at (2, 2)
+2025-11-18 22:53:42,452 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (248, 250, 65) to (252, 250, 65) with 125.0W power
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,452 - INFO - [Robot.welder] - Welding cell terminal at (2, 3)
+2025-11-18 22:53:42,452 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (268, 250, 65) to (272, 250, 65) with 125.0W power
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,452 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,452 - INFO - [Robot.welder] - Welding cell terminal at (3, 0)
+2025-11-18 22:53:42,453 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,453 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (208, 270, 65) to (212, 270, 65) with 125.0W power
+2025-11-18 22:53:42,453 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,454 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,454 - INFO - [Robot.welder] - Welding cell terminal at (3, 1)
+2025-11-18 22:53:42,454 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,454 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (228, 270, 65) to (232, 270, 65) with 125.0W power
+2025-11-18 22:53:42,454 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,454 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,454 - INFO - [Robot.welder] - Welding cell terminal at (3, 2)
+2025-11-18 22:53:42,455 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,455 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (248, 270, 65) to (252, 270, 65) with 125.0W power
+2025-11-18 22:53:42,455 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,455 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,455 - INFO - [Robot.welder] - Welding cell terminal at (3, 3)
+2025-11-18 22:53:42,456 - WARNING - [LaserMarker.TRUMPF_TruMark_6130] - Power value 2000W exceeds maximum 125.0W, limiting to maximum
+2025-11-18 22:53:42,456 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting weld from (268, 270, 65) to (272, 270, 65) with 125.0W power
+2025-11-18 22:53:42,456 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Weld path distance: 4.00mm, estimated duration: 0.40s
+2025-11-18 22:53:42,456 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed welding operation
+2025-11-18 22:53:42,456 - INFO - [Robot.welder] - Marking module ID: MOD_20251118_001
+2025-11-18 22:53:42,456 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Starting to mark text 'MOD_20251118_001' at (250, 190, 30) with 50W power
+2025-11-18 22:53:42,456 - INFO - [LaserMarker.TRUMPF_TruMark_6130] - Completed marking text 'MOD_20251118_001'
+2025-11-18 22:53:42,459 - INFO - [BatteryPackAssembly] - Module MOD_20251118_001 completed in 2.56s
+2025-11-18 22:53:42,459 - INFO - [BatteryPackAssembly] - Moving conveyor by 500mm
+2025-11-18 22:53:44,961 - INFO - [BatteryPackAssembly] - Conveyor movement finished.
