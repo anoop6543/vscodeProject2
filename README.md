@@ -232,6 +232,25 @@ A high-tech scenario simulating the manufacturing of automotive giga fuses, feat
 -   **Full Lifecycle**: Tracking the product through multiple distinct manufacturing stages.
 -   **Robust Error Handling**: E-Stop logic and error recovery steps.
 
+### Automated Paint Shop
+
+Simulates a robotic painting station with environmental monitoring and multi-layer application.
+
+**Key Features:**
+-   **Robotic Spraying**: Simulation of flow rate, fan width, and path following.
+-   **Environmental Control**: Monitoring of booth temperature and humidity, impacting quality.
+-   **Multi-Layer Process**: Primer, Base Coat, and Clear Coat application steps.
+
+### AGV Material Delivery
+
+Simulates a fleet of Automated Guided Vehicles (AGVs) managing logistics within the plant.
+
+**Key Features:**
+-   **Fleet Management**: Logic to dispatch the nearest available AGV.
+-   **JIT Delivery**: Responding to material requests from different assembly lines.
+-   **Battery Management**: Simulation of battery usage and charging cycles.
+
+
 
 
 ## Setup and Installation

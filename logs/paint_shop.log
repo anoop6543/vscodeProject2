@@ -1,0 +1,24 @@
+2025-11-19 22:09:21,556 - INFO - [PaintShop] - Starting paint job for Part Door_Panel_L_001 - Color: MidnightBlue
+2025-11-19 22:09:21,558 - INFO - [PaintShop] - Step: Cleaning
+2025-11-19 22:09:22,060 - INFO - [PaintShop] - Step: Primer Coat
+2025-11-19 22:09:22,061 - INFO - [root] - [PaintRobot1] Spraying Primer (Grey) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:22,565 - INFO - [root] - [PaintRobot1] Spraying Primer (Grey) from (20, 10, 50) to (20, 90, 50)
+2025-11-19 22:09:23,070 - INFO - [PaintShop] - Step: Base Coat (MidnightBlue)
+2025-11-19 22:09:23,070 - INFO - [root] - [PaintRobot1] Spraying Base (MidnightBlue) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:23,573 - INFO - [root] - [PaintRobot1] Spraying Base (MidnightBlue) from (20, 10, 50) to (20, 90, 50)
+2025-11-19 22:09:24,082 - INFO - [PaintShop] - Step: Clear Coat
+2025-11-19 22:09:24,083 - INFO - [root] - [PaintRobot1] Spraying Clear (Clear) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:24,585 - INFO - [PaintShop] - Step: Curing/Bake
+2025-11-19 22:09:25,588 - INFO - [PaintShop] - Paint job completed for Door_Panel_L_001 in 4.03s
+2025-11-19 22:09:25,588 - INFO - [PaintShop] - Starting paint job for Part Hood_002 - Color: RacingRed
+2025-11-19 22:09:25,589 - INFO - [PaintShop] - Step: Cleaning
+2025-11-19 22:09:26,090 - INFO - [PaintShop] - Step: Primer Coat
+2025-11-19 22:09:26,091 - INFO - [root] - [PaintRobot1] Spraying Primer (Grey) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:26,600 - INFO - [root] - [PaintRobot1] Spraying Primer (Grey) from (20, 10, 50) to (20, 90, 50)
+2025-11-19 22:09:27,111 - INFO - [PaintShop] - Step: Base Coat (RacingRed)
+2025-11-19 22:09:27,112 - INFO - [root] - [PaintRobot1] Spraying Base (RacingRed) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:27,615 - INFO - [root] - [PaintRobot1] Spraying Base (RacingRed) from (20, 10, 50) to (20, 90, 50)
+2025-11-19 22:09:28,122 - INFO - [PaintShop] - Step: Clear Coat
+2025-11-19 22:09:28,123 - INFO - [root] - [PaintRobot1] Spraying Clear (Clear) from (10, 10, 50) to (10, 90, 50)
+2025-11-19 22:09:28,628 - INFO - [PaintShop] - Step: Curing/Bake
+2025-11-19 22:09:29,646 - INFO - [PaintShop] - Paint job completed for Hood_002 in 4.04s

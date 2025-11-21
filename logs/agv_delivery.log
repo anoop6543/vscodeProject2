@@ -1,0 +1,28 @@
+2025-11-19 22:11:03,114 - INFO - [FleetManager] - Request received: Deliver Cells_18650_Pallet to BatteryLine
+2025-11-19 22:11:03,114 - INFO - [FleetManager] - Dispatching AGV_01
+2025-11-19 22:11:03,115 - INFO - [root] - [AGV_01] Moving from (0, 0) to (0, 0)
+2025-11-19 22:11:03,115 - INFO - [root] - [AGV_01] Loading Cells_18650_Pallet
+2025-11-19 22:11:04,116 - INFO - [root] - [AGV_01] Moving from (0, 0) to (100, 200)
+2025-11-19 22:11:04,347 - INFO - [root] - [AGV_01] Unloading Cells_18650_Pallet
+2025-11-19 22:11:05,348 - INFO - [root] - [AGV_01] Moving from (100, 200) to (20, 0)
+2025-11-19 22:11:06,577 - INFO - [FleetManager] - Request received: Deliver Ceramic_Housings to FuseLine
+2025-11-19 22:11:06,578 - INFO - [FleetManager] - Dispatching AGV_02
+2025-11-19 22:11:06,578 - INFO - [root] - [AGV_02] Moving from (0, 0) to (0, 0)
+2025-11-19 22:11:06,578 - INFO - [root] - [AGV_02] Loading Ceramic_Housings
+2025-11-19 22:11:07,580 - INFO - [root] - [AGV_02] Moving from (0, 0) to (300, 200)
+2025-11-19 22:11:07,947 - INFO - [root] - [AGV_02] Unloading Ceramic_Housings
+2025-11-19 22:11:08,949 - INFO - [root] - [AGV_02] Moving from (300, 200) to (20, 0)
+2025-11-19 22:11:10,297 - INFO - [FleetManager] - Request received: Deliver Paint_Drums_Blue to PaintShop
+2025-11-19 22:11:10,298 - INFO - [FleetManager] - Dispatching AGV_03
+2025-11-19 22:11:10,298 - INFO - [root] - [AGV_03] Moving from (0, 0) to (0, 0)
+2025-11-19 22:11:10,298 - INFO - [root] - [AGV_03] Loading Paint_Drums_Blue
+2025-11-19 22:11:11,300 - INFO - [root] - [AGV_03] Moving from (0, 0) to (500, 100)
+2025-11-19 22:11:11,810 - INFO - [root] - [AGV_03] Unloading Paint_Drums_Blue
+2025-11-19 22:11:12,811 - INFO - [root] - [AGV_03] Moving from (500, 100) to (20, 0)
+2025-11-19 22:11:14,305 - INFO - [FleetManager] - Request received: Deliver Busbar_Coils to BatteryLine
+2025-11-19 22:11:14,305 - INFO - [FleetManager] - Dispatching AGV_01
+2025-11-19 22:11:14,305 - INFO - [root] - [AGV_01] Moving from (20, 0) to (0, 0)
+2025-11-19 22:11:14,325 - INFO - [root] - [AGV_01] Loading Busbar_Coils
+2025-11-19 22:11:15,326 - INFO - [root] - [AGV_01] Moving from (0, 0) to (100, 200)
+2025-11-19 22:11:15,551 - INFO - [root] - [AGV_01] Unloading Busbar_Coils
+2025-11-19 22:11:16,552 - INFO - [root] - [AGV_01] Moving from (100, 200) to (20, 0)

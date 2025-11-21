@@ -1,1 +1,3 @@
 {"timestamp": "2025-11-19T03:53:42.457182Z", "recipe_id": 1, "output_quantity": 1, "status": "Success", "operator": "AutoLine_1", "shift": "Day", "recipe_name": "EV_Battery_Module_4x4", "cycle_time_seconds": 2.560902}
+{"timestamp": "2025-11-20T03:09:25.586844Z", "recipe_id": 1, "output_quantity": "Standard_3Layer_Paint", "status": 1, "operator": "Success", "shift": "AutoPaint", "recipe_name": "Shift_A", "cycle_time_seconds": 4.026964}
+{"timestamp": "2025-11-20T03:09:29.632738Z", "recipe_id": 1, "output_quantity": "Standard_3Layer_Paint", "status": 1, "operator": "Success", "shift": "AutoPaint", "recipe_name": "Shift_A", "cycle_time_seconds": 4.041084}
