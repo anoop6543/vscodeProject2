@@ -9,8 +9,8 @@ from typing import Dict, Any, Tuple
 
 # Add parent directory to path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from SimpleGantrySimulation import GantryRobot, ObjectType
-from sim_opc_server import sim_opc_instance
+from gantry_system.core.gantry_robot import GantryRobot, ObjectType
+from gantry_system.core.sim_opc_server import sim_opc_instance
 
 # Configure logging
 logging.basicConfig(

@@ -9,9 +9,9 @@ into existing gantry robot simulations.
 import logging
 from typing import Tuple, Optional, Dict, Any, List, Union
 
-from SimpleGantrySimulation import GantryRobot
-from laser_marker import LaserMarker, create_laser_marker, LaserMarkerType, LaserOperationMode
-from sim_opc_server import sim_opc_instance
+from gantry_system.core.gantry_robot import GantryRobot
+from .laser_marker import LaserMarker, create_laser_marker, LaserMarkerType, LaserOperationMode
+from gantry_system.core.sim_opc_server import sim_opc_instance
 
 class LaserMarkerAdapter:
     """

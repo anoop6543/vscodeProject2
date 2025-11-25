@@ -1,5 +1,5 @@
 import datetime
-import aws_logger_sim as awslog # Added for AWS logging simulation
+from gantry_system.utils import aws_logger_sim as awslog # Added for AWS logging simulation
 
 # --- In-Memory "Database" Tables ---
 db_recipes = []

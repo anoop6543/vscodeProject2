@@ -1,13 +1,13 @@
 import datetime
 import json # For get_latest_logs
 import os   # For get_latest_logs
-from sim_opc_server import sim_opc_instance # OPC interactions
+from gantry_system.core.sim_opc_server import sim_opc_instance # OPC interactions
 # from scenarios.pcb_assembly import pcb_assembly_line_instance # This is tricky, avoid direct instance import if possible.
                                                                 # How to get scenario status? Perhaps OPC tags or a global registry.
                                                                 # For now, scenario_name and status might be hardcoded or fetched via a conventional OPC tag.
-import aws_logger_sim # For last_significant_event_timestamp
-import file_logger # For paths to other log files
-import sim_database_manager as dbm 
+from gantry_system.utils import aws_logger_sim # For last_significant_event_timestamp
+from gantry_system.utils import file_logger # For paths to other log files
+from gantry_system.core import sim_database_manager as dbm 
 
 
 # Placeholder for accessing the main simulation scenario instance if needed.

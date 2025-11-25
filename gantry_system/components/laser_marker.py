@@ -14,7 +14,7 @@ from typing import Tuple, Dict, List, Optional, Union, Any
 from abc import ABC, abstractmethod
 
 # Reference to OPC server for tags if needed
-import sim_opc_server
+from gantry_system.core import sim_opc_server
 
 class LaserMarkerStatus(Enum):
     """Status values for laser markers"""

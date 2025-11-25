@@ -15,7 +15,7 @@ except ImportError:
     import ros2_integration.mock_rclpy as rclpy
     from ros2_integration.mock_rclpy import Node
 
-from SimpleGantrySimulation import GantryRobot, ObjectType
+from gantry_system.core.gantry_robot import GantryRobot, ObjectType
 
 class GantryBridge(Node):
     def __init__(self):

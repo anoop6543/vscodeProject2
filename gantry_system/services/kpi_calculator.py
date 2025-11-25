@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Dict, Any, Optional, Tuple, Union, Sequence, Mapping
 
-import sim_database_manager as dbm
+from gantry_system.core import sim_database_manager as dbm
 
 # --- Default Operational Parameters (can be overridden by callers) ---
 # These are examples; they might be configured per machine or product in a real system.

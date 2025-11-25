@@ -2,7 +2,7 @@ import random
 from enum import Enum
 from typing import List, Tuple
 import math
-from sim_opc_server import sim_opc_instance # Assuming sim_opc_server.py is in root
+from .sim_opc_server import sim_opc_instance # Assuming sim_opc_server.py is in root
 
 # Enums for Gripper Types and Object Types
 class GripperType(Enum):
